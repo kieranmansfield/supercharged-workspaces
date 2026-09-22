@@ -31,6 +31,48 @@ function addFolderDropdown(
 		})
 }
 
+function addIconField(contentEl: HTMLElement, value: string, onChange: (value: string) => void) {
+	new Setting(contentEl)
+		.setName('Emoji icon (optional)')
+		.setDesc('Enter a single emoji to identify this workspace')
+		.addText((text) => text.setPlaceholder('').setValue(value).onChange(onChange))
+}
+
+function addNameField(contentEl: HTMLElement, value: string, onChange: (value: string) => void) {
+	new Setting(contentEl)
+		.setName('Workspace name')
+		.setDesc('Enter a name for this workspace')
+		.addText((text) => text.setPlaceholder('My workspace').setValue(value).onChange(onChange))
+}
+
+function addDescriptionField(
+	contentEl: HTMLElement,
+	value: string,
+	onChange: (value: string) => void
+) {
+	new Setting(contentEl)
+		.setName('Description (optional)')
+		.setDesc('Add a description to help remember what this workspace is for')
+		.addTextArea((text) =>
+			text.setPlaceholder('Used for writing blog posts...').setValue(value).onChange(onChange)
+		)
+}
+
+function addSaveCancelButtons(
+	contentEl: HTMLElement,
+	onCancel: () => void,
+	onSave: () => void | Promise<void>
+) {
+	new Setting(contentEl)
+		.addButton((btn) => btn.setButtonText('Cancel').onClick(onCancel))
+		.addButton((btn) =>
+			btn
+				.setButtonText('Save')
+				.setCta()
+				.onClick(() => void onSave())
+		)
+}
+
 export class WorkspaceManagementModal extends Modal {
 	constructor(
 		app: App,
@@ -218,77 +260,38 @@ export class SaveWorkspaceModal extends Modal {
 
 		contentEl.createEl('h2', { text: 'Save workspace' })
 
-		new Setting(contentEl)
-			.setName('Emoji icon (optional)')
-			.setDesc('Enter a single emoji to identify this workspace')
-			.addText((text) =>
-				text
-					.setPlaceholder('')
-					.setValue(this.icon)
-					.onChange((value) => {
-						this.icon = value
-					})
-			)
-
-		new Setting(contentEl)
-			.setName('Workspace name')
-			.setDesc('Enter a name for this workspace')
-			.addText((text) =>
-				text
-					.setPlaceholder('My workspace')
-					.setValue(this.name)
-					.onChange((value) => {
-						this.name = value
-					})
-			)
-
-		new Setting(contentEl)
-			.setName('Description (optional)')
-			.setDesc('Add a description to help remember what this workspace is for')
-			.addTextArea((text) =>
-				text
-					.setPlaceholder('Used for writing blog posts...')
-					.setValue(this.description)
-					.onChange((value) => {
-						this.description = value
-					})
-			)
+		addIconField(contentEl, this.icon, (value) => (this.icon = value))
+		addNameField(contentEl, this.name, (value) => (this.name = value))
+		addDescriptionField(contentEl, this.description, (value) => (this.description = value))
 
 		addFolderDropdown(contentEl, this.plugin, 'Folder (optional)', this.folderId, (folderId) => {
 			this.folderId = folderId
 		})
 
-		new Setting(contentEl)
-			.addButton((btn) =>
-				btn.setButtonText('Cancel').onClick(() => {
-					this.close()
-				})
-			)
-			.addButton((btn) =>
-				btn
-					.setButtonText('Save')
-					.setCta()
-					.onClick(async () => {
-						if (!this.name.trim()) {
-							new Notice('Please enter a workspace name')
-							return
-						}
-						const workspace = await this.workspaceManager.saveWorkspace(
-							this.name.trim(),
-							this.description.trim() || undefined,
-							this.icon.trim() || undefined
-						)
-						// Assign folder if selected
-						if (this.folderId) {
-							workspace.folderId = this.folderId
-							await this.plugin.saveSettings()
-						}
-						if (this.onSave) {
-							this.onSave(workspace)
-						}
-						this.close()
-					})
-			)
+		addSaveCancelButtons(
+			contentEl,
+			() => this.close(),
+			async () => {
+				if (!this.name.trim()) {
+					new Notice('Please enter a workspace name')
+					return
+				}
+				const workspace = await this.workspaceManager.saveWorkspace(
+					this.name.trim(),
+					this.description.trim() || undefined,
+					this.icon.trim() || undefined
+				)
+				// Assign folder if selected
+				if (this.folderId) {
+					workspace.folderId = this.folderId
+					await this.plugin.saveSettings()
+				}
+				if (this.onSave) {
+					this.onSave(workspace)
+				}
+				this.close()
+			}
+		)
 	}
 
 	onClose() {
@@ -327,35 +330,9 @@ export class RenameWorkspaceModal extends Modal {
 
 		contentEl.createEl('h2', { text: 'Edit workspace' })
 
-		new Setting(contentEl)
-			.setName('Emoji icon (optional)')
-			.setDesc('Enter a single emoji to identify this workspace')
-			.addText((text) =>
-				text
-					.setPlaceholder('')
-					.setValue(this.icon)
-					.onChange((value) => {
-						this.icon = value
-					})
-			)
-
-		new Setting(contentEl).setName('Workspace name').addText((text) =>
-			text
-				.setPlaceholder('My workspace')
-				.setValue(this.name)
-				.onChange((value) => {
-					this.name = value
-				})
-		)
-
-		new Setting(contentEl).setName('Description (optional)').addTextArea((text) =>
-			text
-				.setPlaceholder('Used for writing blog posts...')
-				.setValue(this.description)
-				.onChange((value) => {
-					this.description = value
-				})
-		)
+		addIconField(contentEl, this.icon, (value) => (this.icon = value))
+		addNameField(contentEl, this.name, (value) => (this.name = value))
+		addDescriptionField(contentEl, this.description, (value) => (this.description = value))
 
 		new Setting(contentEl)
 			.setName('Pin workspace')
@@ -379,38 +356,29 @@ export class RenameWorkspaceModal extends Modal {
 			this.folderId = folderId
 		})
 
-		new Setting(contentEl)
-			.addButton((btn) =>
-				btn.setButtonText('Cancel').onClick(() => {
-					this.close()
+		addSaveCancelButtons(
+			contentEl,
+			() => this.close(),
+			async () => {
+				if (!this.name.trim()) {
+					new Notice('Please enter a workspace name')
+					return
+				}
+				await this.workspaceManager.updateWorkspace(this.workspace.id, {
+					name: this.name.trim(),
+					description: this.description.trim() || undefined,
+					icon: this.icon.trim() || undefined,
+					pinned: this.pinned,
+					starred: this.starred,
+					folderId: this.folderId,
 				})
-			)
-			.addButton((btn) =>
-				btn
-					.setButtonText('Save')
-					.setCta()
-					.onClick(() => {
-						void (async () => {
-							if (!this.name.trim()) {
-								new Notice('Please enter a workspace name')
-								return
-							}
-							await this.workspaceManager.updateWorkspace(this.workspace.id, {
-								name: this.name.trim(),
-								description: this.description.trim() || undefined,
-								icon: this.icon.trim() || undefined,
-								pinned: this.pinned,
-								starred: this.starred,
-								folderId: this.folderId,
-							})
-							this.plugin.refreshWorkspacesView()
-							if (this.onSave) {
-								this.onSave()
-							}
-							this.close()
-						})()
-					})
-			)
+				this.plugin.refreshWorkspacesView()
+				if (this.onSave) {
+					this.onSave()
+				}
+				this.close()
+			}
+		)
 	}
 
 	onClose() {

@@ -15,40 +15,31 @@ export function registerCommands(
 	workspaceManager: WorkspaceManager,
 	updateStatusBar: (workspaceId: string | null) => void
 ) {
+	const openSaveWorkspaceModal = () => {
+		const modal = new SaveWorkspaceModal(
+			plugin.app,
+			workspaceManager,
+			plugin,
+			(workspace: WorkspaceConfig) => {
+				updateStatusBar(workspace.id)
+				plugin.refreshWorkspacesView()
+			}
+		)
+		modal.open()
+	}
+
 	// Save current workspace
 	plugin.addCommand({
 		id: 'save-workspace',
 		name: 'Save current workspace',
-		callback: () => {
-			const modal = new SaveWorkspaceModal(
-				plugin.app,
-				workspaceManager,
-				plugin,
-				(workspace: WorkspaceConfig) => {
-					updateStatusBar(workspace.id)
-					plugin.refreshWorkspacesView()
-				}
-			)
-			modal.open()
-		},
+		callback: openSaveWorkspaceModal,
 	})
 
 	// Create new workspace from current layout (alias for clarity)
 	plugin.addCommand({
 		id: 'create-new-workspace',
 		name: 'Create new workspace from current layout',
-		callback: () => {
-			const modal = new SaveWorkspaceModal(
-				plugin.app,
-				workspaceManager,
-				plugin,
-				(workspace: WorkspaceConfig) => {
-					updateStatusBar(workspace.id)
-					plugin.refreshWorkspacesView()
-				}
-			)
-			modal.open()
-		},
+		callback: openSaveWorkspaceModal,
 	})
 
 	// Manage workspaces
