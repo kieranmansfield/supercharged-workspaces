@@ -97,19 +97,17 @@ export class WorkspaceManagementModal extends Modal {
 	}
 }
 
-export class WorkspaceFuzzySuggestModal extends FuzzySuggestModal<WorkspaceConfig> {
+abstract class BaseWorkspaceFuzzyModal extends FuzzySuggestModal<WorkspaceConfig> {
 	constructor(
 		app: App,
-		private workspaceManager: WorkspaceManager,
-		private plugin: SuperchargedWorkspacesPlugin
+		protected workspaceManager: WorkspaceManager,
+		protected plugin: SuperchargedWorkspacesPlugin
 	) {
 		super(app)
-		this.setPlaceholder('Type to search workspaces...')
 	}
 
-	getItems(): WorkspaceConfig[] {
-		return this.workspaceManager.getAllWorkspaces()
-	}
+	abstract getItems(): WorkspaceConfig[]
+	abstract onChooseItem(workspace: WorkspaceConfig): void
 
 	getItemText(workspace: WorkspaceConfig): string {
 		// Include description in searchable text if it exists
@@ -120,7 +118,14 @@ export class WorkspaceFuzzySuggestModal extends FuzzySuggestModal<WorkspaceConfi
 	}
 
 	renderSuggestion(item: { item: WorkspaceConfig }, el: HTMLElement) {
-		const workspace = item.item
+		this.renderWorkspaceSuggestion(item.item, el, true)
+	}
+
+	protected renderWorkspaceSuggestion(
+		workspace: WorkspaceConfig,
+		el: HTMLElement,
+		showLastUpdated: boolean
+	) {
 		el.createDiv({ cls: 'workspace-fuzzy-item' }, (div) => {
 			const nameContainer = div.createDiv({
 				cls: 'workspace-fuzzy-name',
@@ -138,12 +143,25 @@ export class WorkspaceFuzzySuggestModal extends FuzzySuggestModal<WorkspaceConfi
 					cls: 'workspace-fuzzy-description',
 				})
 			}
-			const date = new Date(workspace.updatedAt).toLocaleDateString()
-			div.createDiv({
-				text: `Last updated: ${date}`,
-				cls: 'workspace-fuzzy-meta',
-			})
+			if (showLastUpdated) {
+				const date = new Date(workspace.updatedAt).toLocaleDateString()
+				div.createDiv({
+					text: `Last updated: ${date}`,
+					cls: 'workspace-fuzzy-meta',
+				})
+			}
 		})
+	}
+}
+
+export class WorkspaceFuzzySuggestModal extends BaseWorkspaceFuzzyModal {
+	constructor(app: App, workspaceManager: WorkspaceManager, plugin: SuperchargedWorkspacesPlugin) {
+		super(app, workspaceManager, plugin)
+		this.setPlaceholder('Type to search workspaces...')
+	}
+
+	getItems(): WorkspaceConfig[] {
+		return this.workspaceManager.getAllWorkspaces()
 	}
 
 	onChooseItem(workspace: WorkspaceConfig): void {
@@ -405,13 +423,9 @@ export class RenameWorkspaceModal extends Modal {
 	}
 }
 
-export class EditWorkspaceFuzzySuggestModal extends FuzzySuggestModal<WorkspaceConfig> {
-	constructor(
-		app: App,
-		private workspaceManager: WorkspaceManager,
-		private plugin: SuperchargedWorkspacesPlugin
-	) {
-		super(app)
+export class EditWorkspaceFuzzySuggestModal extends BaseWorkspaceFuzzyModal {
+	constructor(app: App, workspaceManager: WorkspaceManager, plugin: SuperchargedWorkspacesPlugin) {
+		super(app, workspaceManager, plugin)
 		this.setPlaceholder('Select workspace to edit...')
 	}
 
@@ -419,33 +433,8 @@ export class EditWorkspaceFuzzySuggestModal extends FuzzySuggestModal<WorkspaceC
 		return this.workspaceManager.getAllWorkspaces()
 	}
 
-	getItemText(workspace: WorkspaceConfig): string {
-		if (workspace.description) {
-			return `${workspace.name} ${workspace.description}`
-		}
-		return workspace.name
-	}
-
 	renderSuggestion(item: { item: WorkspaceConfig }, el: HTMLElement) {
-		const workspace = item.item
-		el.createDiv({ cls: 'workspace-fuzzy-item' }, (div) => {
-			const nameContainer = div.createDiv({
-				cls: 'workspace-fuzzy-name',
-			})
-			if (workspace.icon) {
-				nameContainer.createSpan({
-					text: workspace.icon + ' ',
-					cls: 'workspace-icon',
-				})
-			}
-			nameContainer.createSpan({ text: workspace.name })
-			if (workspace.description) {
-				div.createDiv({
-					text: workspace.description,
-					cls: 'workspace-fuzzy-description',
-				})
-			}
-		})
+		this.renderWorkspaceSuggestion(item.item, el, false)
 	}
 
 	onChooseItem(workspace: WorkspaceConfig): void {
@@ -453,14 +442,14 @@ export class EditWorkspaceFuzzySuggestModal extends FuzzySuggestModal<WorkspaceC
 	}
 }
 
-export class FilteredWorkspaceFuzzySuggestModal extends FuzzySuggestModal<WorkspaceConfig> {
+export class FilteredWorkspaceFuzzySuggestModal extends BaseWorkspaceFuzzyModal {
 	constructor(
 		app: App,
-		private workspaceManager: WorkspaceManager,
+		workspaceManager: WorkspaceManager,
 		private filterType: 'recent' | 'pinned' | 'favorites',
-		private plugin: SuperchargedWorkspacesPlugin
+		plugin: SuperchargedWorkspacesPlugin
 	) {
-		super(app)
+		super(app, workspaceManager, plugin)
 		const titles = {
 			recent: 'Recent workspaces',
 			pinned: 'Pinned workspaces',
@@ -485,40 +474,6 @@ export class FilteredWorkspaceFuzzySuggestModal extends FuzzySuggestModal<Worksp
 			default:
 				return allWorkspaces
 		}
-	}
-
-	getItemText(workspace: WorkspaceConfig): string {
-		if (workspace.description) {
-			return `${workspace.name} ${workspace.description}`
-		}
-		return workspace.name
-	}
-
-	renderSuggestion(item: { item: WorkspaceConfig }, el: HTMLElement) {
-		const workspace = item.item
-		el.createDiv({ cls: 'workspace-fuzzy-item' }, (div) => {
-			const nameContainer = div.createDiv({
-				cls: 'workspace-fuzzy-name',
-			})
-			if (workspace.icon) {
-				nameContainer.createSpan({
-					text: workspace.icon + ' ',
-					cls: 'workspace-icon',
-				})
-			}
-			nameContainer.createSpan({ text: workspace.name })
-			if (workspace.description) {
-				div.createDiv({
-					text: workspace.description,
-					cls: 'workspace-fuzzy-description',
-				})
-			}
-			const date = new Date(workspace.updatedAt).toLocaleDateString()
-			div.createDiv({
-				text: `Last updated: ${date}`,
-				cls: 'workspace-fuzzy-meta',
-			})
-		})
 	}
 
 	onChooseItem(workspace: WorkspaceConfig): void {
