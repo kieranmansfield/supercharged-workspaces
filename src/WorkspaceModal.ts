@@ -58,8 +58,18 @@ function addDescriptionField(
 		)
 }
 
+function addWorkspaceFields(
+	contentEl: HTMLElement,
+	target: { icon: string; name: string; description: string }
+) {
+	addIconField(contentEl, target.icon, (value) => (target.icon = value))
+	addNameField(contentEl, target.name, (value) => (target.name = value))
+	addDescriptionField(contentEl, target.description, (value) => (target.description = value))
+}
+
 function addSaveCancelButtons(
 	contentEl: HTMLElement,
+	getName: () => string,
 	onCancel: () => void,
 	onSave: () => void | Promise<void>
 ) {
@@ -69,7 +79,13 @@ function addSaveCancelButtons(
 			btn
 				.setButtonText('Save')
 				.setCta()
-				.onClick(() => void onSave())
+				.onClick(() => {
+					if (!getName().trim()) {
+						new Notice('Please enter a workspace name')
+						return
+					}
+					void onSave()
+				})
 		)
 }
 
@@ -240,9 +256,9 @@ export class WorkspaceFuzzySuggestModal extends BaseWorkspaceFuzzyModal {
 }
 
 export class SaveWorkspaceModal extends Modal {
-	private name = ''
-	private description = ''
-	private icon = ''
+	name = ''
+	description = ''
+	icon = ''
 	private folderId: string | undefined = undefined
 
 	constructor(
@@ -260,9 +276,7 @@ export class SaveWorkspaceModal extends Modal {
 
 		contentEl.createEl('h2', { text: 'Save workspace' })
 
-		addIconField(contentEl, this.icon, (value) => (this.icon = value))
-		addNameField(contentEl, this.name, (value) => (this.name = value))
-		addDescriptionField(contentEl, this.description, (value) => (this.description = value))
+		addWorkspaceFields(contentEl, this)
 
 		addFolderDropdown(contentEl, this.plugin, 'Folder (optional)', this.folderId, (folderId) => {
 			this.folderId = folderId
@@ -270,12 +284,9 @@ export class SaveWorkspaceModal extends Modal {
 
 		addSaveCancelButtons(
 			contentEl,
+			() => this.name,
 			() => this.close(),
 			async () => {
-				if (!this.name.trim()) {
-					new Notice('Please enter a workspace name')
-					return
-				}
 				const workspace = await this.workspaceManager.saveWorkspace(
 					this.name.trim(),
 					this.description.trim() || undefined,
@@ -301,9 +312,9 @@ export class SaveWorkspaceModal extends Modal {
 }
 
 export class RenameWorkspaceModal extends Modal {
-	private name: string
-	private description: string
-	private icon: string
+	name: string
+	description: string
+	icon: string
 	private pinned: boolean
 	private starred: boolean
 	private folderId: string | undefined
@@ -330,9 +341,7 @@ export class RenameWorkspaceModal extends Modal {
 
 		contentEl.createEl('h2', { text: 'Edit workspace' })
 
-		addIconField(contentEl, this.icon, (value) => (this.icon = value))
-		addNameField(contentEl, this.name, (value) => (this.name = value))
-		addDescriptionField(contentEl, this.description, (value) => (this.description = value))
+		addWorkspaceFields(contentEl, this)
 
 		new Setting(contentEl)
 			.setName('Pin workspace')
@@ -358,12 +367,9 @@ export class RenameWorkspaceModal extends Modal {
 
 		addSaveCancelButtons(
 			contentEl,
+			() => this.name,
 			() => this.close(),
 			async () => {
-				if (!this.name.trim()) {
-					new Notice('Please enter a workspace name')
-					return
-				}
 				await this.workspaceManager.updateWorkspace(this.workspace.id, {
 					name: this.name.trim(),
 					description: this.description.trim() || undefined,
