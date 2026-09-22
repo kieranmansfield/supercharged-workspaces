@@ -2,7 +2,7 @@ export interface WorkspaceConfig {
 	id: string
 	name: string
 	description?: string
-	layout: unknown // Obsidian's workspace layout object
+	layout: Record<string, unknown> // Obsidian's workspace layout object
 	createdAt: number
 	updatedAt: number
 	icon?: string
@@ -26,21 +26,28 @@ export type SmartGroupType = 'all' | 'recent' | 'pinned' | 'favorites'
 
 export interface PluginSettings {
 	workspaces: Record<string, WorkspaceConfig>
-	activeWorkspaceId: string | null
-	autoSave: boolean
-	showStatusBar: boolean
-	enabledCommands: Set<string>
-	workspaceOrder: string[] // Array of workspace IDs in custom order
 	folders: Record<string, WorkspaceFolder> // Folder definitions
-	folderOrder: string[] // Order of folders in panel
-	activeSmartGroup: SmartGroupType | null // Current view filter
-	showSmartGroups: boolean // Toggle smart groups visibility
-	collapsedFolders: Set<string> // Track which folders are collapsed
-	enableBetaFolders: boolean // Toggle folder functionality (beta)
-	enableDragAndDrop: boolean // Toggle drag-and-drop reordering
-	enablePin: boolean // Toggle pin functionality
-	enableStar: boolean // Toggle star functionality
-	enableRecent: boolean // Toggle recent workspaces functionality
+	ui: {
+		showStatusBar: boolean
+		showSmartGroups: boolean // Toggle smart groups visibility
+	}
+	features: {
+		autoSave: boolean
+		enableBetaFolders: boolean // Toggle folder functionality (beta)
+		enableDragAndDrop: boolean // Toggle drag-and-drop reordering
+		enablePin: boolean // Toggle pin functionality
+		enableStar: boolean // Toggle star functionality
+		enableRecent: boolean // Toggle recent workspaces functionality
+	}
+	ordering: {
+		workspaceOrder: string[] // Array of workspace IDs in custom order
+		folderOrder: string[] // Order of folders in panel
+	}
+	view: {
+		activeWorkspaceId: string | null
+		activeSmartGroup: SmartGroupType | null // Current view filter
+		collapsedFolders: Set<string> // Track which folders are collapsed
+	}
 }
 
 export const FOLDER_COLORS: { name: string; value: string }[] = [
@@ -56,19 +63,26 @@ export const FOLDER_COLORS: { name: string; value: string }[] = [
 
 export const DEFAULT_SETTINGS: PluginSettings = {
 	workspaces: {},
-	activeWorkspaceId: null,
-	autoSave: false,
-	showStatusBar: true,
-	enabledCommands: new Set(),
-	workspaceOrder: [],
 	folders: {},
-	folderOrder: [],
-	activeSmartGroup: null,
-	showSmartGroups: true,
-	collapsedFolders: new Set(),
-	enableBetaFolders: false,
-	enableDragAndDrop: false,
-	enablePin: false,
-	enableStar: false,
-	enableRecent: false,
+	ui: {
+		showStatusBar: true,
+		showSmartGroups: true,
+	},
+	features: {
+		autoSave: false,
+		enableBetaFolders: false,
+		enableDragAndDrop: false,
+		enablePin: false,
+		enableStar: false,
+		enableRecent: false,
+	},
+	ordering: {
+		workspaceOrder: [],
+		folderOrder: [],
+	},
+	view: {
+		activeWorkspaceId: null,
+		activeSmartGroup: null,
+		collapsedFolders: new Set(),
+	},
 }

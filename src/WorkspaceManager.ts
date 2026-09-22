@@ -1,5 +1,6 @@
 import { App, Notice } from 'obsidian'
 import { WorkspaceConfig } from './types'
+import { generateUniqueId } from './id'
 
 export class WorkspaceManager {
 	constructor(
@@ -41,28 +42,14 @@ export class WorkspaceManager {
 		}
 
 		try {
-			console.log('Loading workspace layout:', workspace.name, workspace.layout)
 			await this.app.workspace.changeLayout(workspace.layout)
 			// Update lastAccessed timestamp
 			workspace.lastAccessed = Date.now()
 			await this.saveSettings()
 			new Notice(`Loaded workspace: ${workspace.name}`)
 		} catch (error) {
-			console.error('Error loading workspace layout:', error)
-			console.error('Workspace data:', { id, name: workspace.name, layout: workspace.layout })
-
-			// Try to provide more specific error messages
-			let errorMessage = 'Failed to load workspace'
-			if (error instanceof Error) {
-				if (error.message.includes('path')) {
-					errorMessage = 'Workspace contains invalid file references. Try recreating the workspace.'
-				} else if (error.message.includes('plugin')) {
-					errorMessage =
-						'Workspace conflicts with another plugin. Try disabling conflicting plugins.'
-				}
-			}
-
-			new Notice(`${errorMessage}: ${workspace.name}`)
+			const reason = error instanceof Error ? error.message : String(error)
+			new Notice(`Failed to load workspace "${workspace.name}": ${reason}`)
 		}
 	}
 
@@ -103,6 +90,6 @@ export class WorkspaceManager {
 	}
 
 	private generateId(): string {
-		return `ws_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+		return `ws_${generateUniqueId()}`
 	}
 }

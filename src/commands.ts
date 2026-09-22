@@ -88,7 +88,7 @@ export function registerCommands(
 		name: 'Update current workspace',
 		callback: async () => {
 			// Get the active workspace ID from plugin settings
-			const activeWorkspaceId = plugin.settings.activeWorkspaceId
+			const activeWorkspaceId = plugin.settings.view.activeWorkspaceId
 
 			if (!activeWorkspaceId) {
 				return
@@ -111,14 +111,14 @@ export function registerCommands(
 		id: 'show-all-workspaces',
 		name: 'Show all workspaces',
 		callback: () => {
-			plugin.settings.activeSmartGroup = 'all'
+			plugin.settings.view.activeSmartGroup = 'all'
 			void plugin.saveSettings()
 			plugin.refreshWorkspacesView()
 		},
 	})
 
 	// Recent workspaces command (only if enabled)
-	if (plugin.settings.enableRecent) {
+	if (plugin.settings.features.enableRecent) {
 		plugin.addCommand({
 			id: 'show-recent-workspaces',
 			name: 'Show recent workspaces',
@@ -135,7 +135,7 @@ export function registerCommands(
 	}
 
 	// Pinned workspaces command (only if enabled)
-	if (plugin.settings.enablePin) {
+	if (plugin.settings.features.enablePin) {
 		plugin.addCommand({
 			id: 'show-pinned-workspaces',
 			name: 'Show pinned workspaces',
@@ -152,7 +152,7 @@ export function registerCommands(
 	}
 
 	// Favorites workspaces command (only if enabled)
-	if (plugin.settings.enableStar) {
+	if (plugin.settings.features.enableStar) {
 		plugin.addCommand({
 			id: 'show-favorites-workspaces',
 			name: 'Show favorite workspaces',
@@ -172,14 +172,14 @@ export function registerCommands(
 		id: 'clear-smart-group-filter',
 		name: 'Clear smart group filter',
 		callback: () => {
-			plugin.settings.activeSmartGroup = null
+			plugin.settings.view.activeSmartGroup = null
 			void plugin.saveSettings()
 			plugin.refreshWorkspacesView()
 		},
 	})
 
 	// Create new folder (only if beta enabled)
-	if (plugin.settings.enableBetaFolders) {
+	if (plugin.settings.features.enableBetaFolders) {
 		plugin.addCommand({
 			id: 'create-folder',
 			name: 'Create workspace folder',

@@ -1,4 +1,5 @@
 import { PluginSettings, WorkspaceFolder } from './types'
+import { generateUniqueId } from './id'
 
 export class FolderManager {
 	constructor(
@@ -8,7 +9,7 @@ export class FolderManager {
 
 	async create(name: string, icon?: string, color?: string): Promise<WorkspaceFolder> {
 		const settings = this.getSettings()
-		const id = `folder-${Date.now()}`
+		const id = `folder_${generateUniqueId()}`
 
 		const folder: WorkspaceFolder = {
 			id,
@@ -20,7 +21,7 @@ export class FolderManager {
 		}
 
 		settings.folders[id] = folder
-		settings.folderOrder.push(id)
+		settings.ordering.folderOrder.push(id)
 		await this.saveSettings()
 
 		return folder
@@ -53,8 +54,8 @@ export class FolderManager {
 		}
 
 		delete settings.folders[id]
-		settings.folderOrder = settings.folderOrder.filter((folderId) => folderId !== id)
-		settings.collapsedFolders.delete(id)
+		settings.ordering.folderOrder = settings.ordering.folderOrder.filter((folderId) => folderId !== id)
+		settings.view.collapsedFolders.delete(id)
 
 		await this.saveSettings()
 	}

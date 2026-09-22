@@ -4,6 +4,33 @@ import { WorkspaceManager } from './WorkspaceManager'
 import SuperchargedWorkspacesPlugin from './main'
 import { filterBySmartGroup } from './workspaceFilters'
 
+function addFolderDropdown(
+	contentEl: HTMLElement,
+	plugin: SuperchargedWorkspacesPlugin,
+	label: string,
+	currentFolderId: string | undefined,
+	onChange: (folderId: string | undefined) => void
+) {
+	if (!plugin.settings.features.enableBetaFolders) return
+
+	const folders = Object.values(plugin.settings.folders)
+	if (folders.length === 0) return
+
+	new Setting(contentEl)
+		.setName(label)
+		.setDesc('Assign this workspace to a folder')
+		.addDropdown((dropdown) => {
+			dropdown.addOption('', 'No folder')
+			folders.forEach((folder: WorkspaceFolder) => {
+				dropdown.addOption(folder.id, folder.name)
+			})
+			dropdown.setValue(currentFolderId || '')
+			dropdown.onChange((value) => {
+				onChange(value || undefined)
+			})
+		})
+}
+
 export class WorkspaceManagementModal extends Modal {
 	constructor(
 		app: App,
@@ -227,25 +254,9 @@ export class SaveWorkspaceModal extends Modal {
 					})
 			)
 
-		// Folder selection (only if beta enabled)
-		if (this.plugin.settings.enableBetaFolders) {
-			const folders = Object.values(this.plugin.settings.folders)
-			if (folders.length > 0) {
-				new Setting(contentEl)
-					.setName('Folder (optional)')
-					.setDesc('Assign this workspace to a folder')
-					.addDropdown((dropdown) => {
-						dropdown.addOption('', 'No folder')
-						folders.forEach((folder: WorkspaceFolder) => {
-							dropdown.addOption(folder.id, folder.name)
-						})
-						dropdown.setValue(this.folderId || '')
-						dropdown.onChange((value) => {
-							this.folderId = value || undefined
-						})
-					})
-			}
-		}
+		addFolderDropdown(contentEl, this.plugin, 'Folder (optional)', this.folderId, (folderId) => {
+			this.folderId = folderId
+		})
 
 		new Setting(contentEl)
 			.addButton((btn) =>
@@ -364,25 +375,9 @@ export class RenameWorkspaceModal extends Modal {
 				})
 			)
 
-		// Folder selection (only if beta enabled)
-		if (this.plugin.settings.enableBetaFolders) {
-			const folders = Object.values(this.plugin.settings.folders)
-			if (folders.length > 0) {
-				new Setting(contentEl)
-					.setName('Folder')
-					.setDesc('Assign this workspace to a folder')
-					.addDropdown((dropdown) => {
-						dropdown.addOption('', 'No folder')
-						folders.forEach((folder: WorkspaceFolder) => {
-							dropdown.addOption(folder.id, folder.name)
-						})
-						dropdown.setValue(this.folderId || '')
-						dropdown.onChange((value) => {
-							this.folderId = value || undefined
-						})
-					})
-			}
-		}
+		addFolderDropdown(contentEl, this.plugin, 'Folder', this.folderId, (folderId) => {
+			this.folderId = folderId
+		})
 
 		new Setting(contentEl)
 			.addButton((btn) =>

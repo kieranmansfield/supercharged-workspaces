@@ -18,8 +18,8 @@ export class SettingsTab extends PluginSettingTab {
 			.setName('Show status bar')
 			.setDesc('Display current workspace name in the status bar')
 			.addToggle((toggle) =>
-				toggle.setValue(this.plugin.settings.showStatusBar).onChange(async (value) => {
-					this.plugin.settings.showStatusBar = value
+				toggle.setValue(this.plugin.settings.ui.showStatusBar).onChange(async (value) => {
+					this.plugin.settings.ui.showStatusBar = value
 					await this.plugin.saveSettings()
 					this.plugin.updateStatusBarVisibility()
 				})
@@ -29,8 +29,8 @@ export class SettingsTab extends PluginSettingTab {
 			.setName('Auto-save current workspace')
 			.setDesc('Automatically save workspace layout changes (experimental)')
 			.addToggle((toggle) =>
-				toggle.setValue(this.plugin.settings.autoSave).onChange(async (value) => {
-					this.plugin.settings.autoSave = value
+				toggle.setValue(this.plugin.settings.features.autoSave).onChange(async (value) => {
+					this.plugin.settings.features.autoSave = value
 					await this.plugin.saveSettings()
 				})
 			)
@@ -39,8 +39,8 @@ export class SettingsTab extends PluginSettingTab {
 			.setName('Enable workspace folders (beta)')
 			.setDesc('Enable folder organization for workspaces. This is a beta feature.')
 			.addToggle((toggle) =>
-				toggle.setValue(this.plugin.settings.enableBetaFolders).onChange(async (value) => {
-					this.plugin.settings.enableBetaFolders = value
+				toggle.setValue(this.plugin.settings.features.enableBetaFolders).onChange(async (value) => {
+					this.plugin.settings.features.enableBetaFolders = value
 					await this.plugin.saveSettings()
 					this.plugin.refreshWorkspacesView()
 				})
@@ -50,8 +50,8 @@ export class SettingsTab extends PluginSettingTab {
 			.setName('Enable drag-and-drop reordering')
 			.setDesc('Allow reordering workspaces and folders by dragging them')
 			.addToggle((toggle) =>
-				toggle.setValue(this.plugin.settings.enableDragAndDrop).onChange(async (value) => {
-					this.plugin.settings.enableDragAndDrop = value
+				toggle.setValue(this.plugin.settings.features.enableDragAndDrop).onChange(async (value) => {
+					this.plugin.settings.features.enableDragAndDrop = value
 					await this.plugin.saveSettings()
 					this.plugin.refreshWorkspacesView()
 				})
@@ -61,8 +61,8 @@ export class SettingsTab extends PluginSettingTab {
 			.setName('Enable pin workspaces')
 			.setDesc('Enable pinning workspaces to keep them at the top')
 			.addToggle((toggle) =>
-				toggle.setValue(this.plugin.settings.enablePin).onChange(async (value) => {
-					this.plugin.settings.enablePin = value
+				toggle.setValue(this.plugin.settings.features.enablePin).onChange(async (value) => {
+					this.plugin.settings.features.enablePin = value
 					await this.plugin.saveSettings()
 					this.plugin.refreshWorkspacesView()
 				})
@@ -72,8 +72,8 @@ export class SettingsTab extends PluginSettingTab {
 			.setName('Enable star workspaces')
 			.setDesc('Enable starring workspaces as favorites')
 			.addToggle((toggle) =>
-				toggle.setValue(this.plugin.settings.enableStar).onChange(async (value) => {
-					this.plugin.settings.enableStar = value
+				toggle.setValue(this.plugin.settings.features.enableStar).onChange(async (value) => {
+					this.plugin.settings.features.enableStar = value
 					await this.plugin.saveSettings()
 					this.plugin.refreshWorkspacesView()
 				})
@@ -83,8 +83,8 @@ export class SettingsTab extends PluginSettingTab {
 			.setName('Enable recent workspaces')
 			.setDesc('Enable tracking and filtering recently accessed workspaces')
 			.addToggle((toggle) =>
-				toggle.setValue(this.plugin.settings.enableRecent).onChange(async (value) => {
-					this.plugin.settings.enableRecent = value
+				toggle.setValue(this.plugin.settings.features.enableRecent).onChange(async (value) => {
+					this.plugin.settings.features.enableRecent = value
 					await this.plugin.saveSettings()
 					this.plugin.refreshWorkspacesView()
 				})

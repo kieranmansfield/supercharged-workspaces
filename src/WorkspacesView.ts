@@ -65,10 +65,10 @@ export class WorkspacesView extends ItemView {
 
 		// Check if smart group bar should be shown
 		const shouldShowSmartGroupBar =
-			this.plugin.settings.enableRecent ||
-			this.plugin.settings.enablePin ||
-			this.plugin.settings.enableStar ||
-			this.plugin.settings.enableBetaFolders
+			this.plugin.settings.features.enableRecent ||
+			this.plugin.settings.features.enablePin ||
+			this.plugin.settings.features.enableStar ||
+			this.plugin.settings.features.enableBetaFolders
 
 		// Render the smart group bar if any features are enabled
 		if (shouldShowSmartGroupBar) {
@@ -76,16 +76,16 @@ export class WorkspacesView extends ItemView {
 		}
 
 		// Apply smart group filter
-		const workspaces = filterBySmartGroup(allWorkspaces, this.plugin.settings.activeSmartGroup)
+		const workspaces = filterBySmartGroup(allWorkspaces, this.plugin.settings.view.activeSmartGroup)
 
 		// Main container
 		const listContainer = container.createDiv('workspaces-list')
 
 		// Render based on active smart group or folder view
-		if (this.plugin.settings.activeSmartGroup) {
+		if (this.plugin.settings.view.activeSmartGroup) {
 			// Smart group view - flat list
 			this.renderFlatWorkspaceList(listContainer, workspaces)
-		} else if (this.plugin.settings.enableBetaFolders) {
+		} else if (this.plugin.settings.features.enableBetaFolders) {
 			// Folder view - organized by folders (only if beta enabled)
 			this.renderFolderView(listContainer, workspaces)
 		} else {
@@ -98,7 +98,7 @@ export class WorkspacesView extends ItemView {
 		const bar = container.createDiv('smart-group-bar')
 
 		// Only show filter buttons if enabled
-		if (this.plugin.settings.showSmartGroups) {
+		if (this.plugin.settings.ui.showSmartGroups) {
 			const groups: Array<{
 				id: SmartGroupType | null
 				label: string
@@ -106,17 +106,17 @@ export class WorkspacesView extends ItemView {
 			}> = [{ id: null, label: 'All', icon: 'layout-grid' }]
 
 			// Add recent smart group if enabled
-			if (this.plugin.settings.enableRecent) {
+			if (this.plugin.settings.features.enableRecent) {
 				groups.push({ id: 'recent', label: 'Recent', icon: 'clock' })
 			}
 
 			// Add pin smart group if enabled
-			if (this.plugin.settings.enablePin) {
+			if (this.plugin.settings.features.enablePin) {
 				groups.push({ id: 'pinned', label: 'Pinned', icon: 'pin' })
 			}
 
 			// Add star smart group if enabled
-			if (this.plugin.settings.enableStar) {
+			if (this.plugin.settings.features.enableStar) {
 				groups.push({
 					id: 'favorites',
 					label: 'Favorites',
@@ -129,7 +129,7 @@ export class WorkspacesView extends ItemView {
 					cls: 'smart-group-button',
 				})
 
-				if (this.plugin.settings.activeSmartGroup === group.id) {
+				if (this.plugin.settings.view.activeSmartGroup === group.id) {
 					btn.addClass('is-active')
 				}
 
@@ -140,7 +140,7 @@ export class WorkspacesView extends ItemView {
 				btn.setAttribute('aria-label', group.label)
 
 				btn.addEventListener('click', () => {
-					this.plugin.settings.activeSmartGroup = group.id
+					this.plugin.settings.view.activeSmartGroup = group.id
 					void this.plugin.saveSettings()
 					this.renderWorkspaces()
 				})
@@ -148,7 +148,7 @@ export class WorkspacesView extends ItemView {
 		}
 
 		// Add folder button (only if beta enabled)
-		if (this.plugin.settings.enableBetaFolders) {
+		if (this.plugin.settings.features.enableBetaFolders) {
 			const addFolderBtn = bar.createEl('button', {
 				cls: 'smart-group-button add-folder-button',
 			})
@@ -198,7 +198,7 @@ export class WorkspacesView extends ItemView {
 		workspaces: WorkspaceConfig[]
 	) {
 		const folderId = folder?.id || 'no-folder'
-		const isCollapsed = folder ? this.plugin.settings.collapsedFolders.has(folder.id) : false
+		const isCollapsed = folder ? this.plugin.settings.view.collapsedFolders.has(folder.id) : false
 
 		const folderSection = container.createDiv('workspace-folder')
 		folderSection.dataset.folderId = folderId
@@ -207,7 +207,7 @@ export class WorkspacesView extends ItemView {
 		const header = folderSection.createDiv('folder-header')
 
 		// Make folder draggable (not for "No Folder") and only if enabled
-		if (folder && this.plugin.settings.enableDragAndDrop) {
+		if (folder && this.plugin.settings.features.enableDragAndDrop) {
 			header.draggable = true
 			header.addEventListener('dragstart', (e) => this.onFolderDragStart(e, folder.id))
 			header.addEventListener('dragend', (e) => this.onFolderDragEnd(e))
@@ -249,9 +249,9 @@ export class WorkspacesView extends ItemView {
 		header.addEventListener('click', () => {
 			if (folder) {
 				if (isCollapsed) {
-					this.plugin.settings.collapsedFolders.delete(folder.id)
+					this.plugin.settings.view.collapsedFolders.delete(folder.id)
 				} else {
-					this.plugin.settings.collapsedFolders.add(folder.id)
+					this.plugin.settings.view.collapsedFolders.add(folder.id)
 				}
 				void this.plugin.saveSettings()
 				this.renderWorkspaces()
@@ -281,14 +281,14 @@ export class WorkspacesView extends ItemView {
 		folderId?: string
 	) {
 		const item = container.createDiv('workspace-item')
-		const isActive = workspace.id === this.plugin.settings.activeWorkspaceId
+		const isActive = workspace.id === this.plugin.settings.view.activeWorkspaceId
 
 		if (isActive) {
 			item.addClass('is-active')
 		}
 
 		// Make draggable if enabled
-		if (this.plugin.settings.enableDragAndDrop) {
+		if (this.plugin.settings.features.enableDragAndDrop) {
 			item.draggable = true
 			item.dataset.workspaceId = workspace.id
 			if (folderId) {
@@ -312,7 +312,7 @@ export class WorkspacesView extends ItemView {
 		const content = item.createDiv('workspace-item-content')
 
 		// Drag handle (only if drag-and-drop is enabled)
-		if (this.plugin.settings.enableDragAndDrop) {
+		if (this.plugin.settings.features.enableDragAndDrop) {
 			const dragHandle = content.createSpan({
 				cls: 'workspace-drag-handle',
 			})
@@ -320,13 +320,13 @@ export class WorkspacesView extends ItemView {
 		}
 
 		// Pinned indicator
-		if (this.plugin.settings.enablePin && workspace.pinned) {
+		if (this.plugin.settings.features.enablePin && workspace.pinned) {
 			const pinIcon = content.createSpan({ cls: 'workspace-pin-icon' })
 			setIcon(pinIcon, 'pin')
 		}
 
 		// Starred indicator
-		if (this.plugin.settings.enableStar && workspace.starred) {
+		if (this.plugin.settings.features.enableStar && workspace.starred) {
 			const starIcon = content.createSpan({ cls: 'workspace-star-icon' })
 			setIcon(starIcon, 'star')
 		}
@@ -365,7 +365,7 @@ export class WorkspacesView extends ItemView {
 
 	private getOrderedFolders(): WorkspaceFolder[] {
 		const folders = this.plugin.folderManager.getAll()
-		const order = this.plugin.settings.folderOrder
+		const order = this.plugin.settings.ordering.folderOrder
 
 		if (order.length === 0) {
 			return folders.sort(
@@ -406,7 +406,7 @@ export class WorkspacesView extends ItemView {
 		menu.addSeparator()
 
 		// Pin/Unpin (only if enabled)
-		if (this.plugin.settings.enablePin) {
+		if (this.plugin.settings.features.enablePin) {
 			menu.addItem((item) => {
 				const isPinned = workspace.pinned || false
 				item
@@ -422,7 +422,7 @@ export class WorkspacesView extends ItemView {
 		}
 
 		// Star/Unstar (only if enabled)
-		if (this.plugin.settings.enableStar) {
+		if (this.plugin.settings.features.enableStar) {
 			menu.addItem((item) => {
 				const isStarred = workspace.starred || false
 				item
@@ -437,7 +437,7 @@ export class WorkspacesView extends ItemView {
 			})
 		}
 		// Move to folder submenu (only if beta enabled)
-		if (this.plugin.settings.enableBetaFolders) {
+		if (this.plugin.settings.features.enableBetaFolders) {
 			menu.addItem((item) => {
 				item
 					.setTitle('Move to folder')
@@ -469,7 +469,7 @@ export class WorkspacesView extends ItemView {
 					const confirmed = await this.confirmDelete(workspace.name)
 					if (confirmed) {
 						void this.workspaceManager.deleteWorkspace(workspaceId)
-						if (this.plugin.settings.activeWorkspaceId === workspaceId) {
+						if (this.plugin.settings.view.activeWorkspaceId === workspaceId) {
 							this.plugin.updateStatusBar(null)
 						}
 						this.renderWorkspaces()
@@ -664,7 +664,7 @@ export class WorkspacesView extends ItemView {
 
 	private getOrderedWorkspaces() {
 		const allWorkspaces = this.workspaceManager.getAllWorkspaces()
-		const order = this.plugin.settings.workspaceOrder
+		const order = this.plugin.settings.ordering.workspaceOrder
 		const ordered = applyOrder(allWorkspaces, order, (w) => w.id)
 
 		return this.sortWorkspaces(ordered)
@@ -673,8 +673,8 @@ export class WorkspacesView extends ItemView {
 	private sortWorkspaces(workspaces: WorkspaceConfig[]): WorkspaceConfig[] {
 		return sortWorkspacesByPriority(
 			workspaces,
-			this.plugin.settings.enablePin,
-			this.plugin.settings.enableStar
+			this.plugin.settings.features.enablePin,
+			this.plugin.settings.features.enableStar
 		)
 	}
 
@@ -763,7 +763,7 @@ export class WorkspacesView extends ItemView {
 		if (!draggedWorkspace) return
 
 		// If beta folders enabled and dropped on a workspace in a different folder, move to that folder
-		if (this.plugin.settings.enableBetaFolders) {
+		if (this.plugin.settings.features.enableBetaFolders) {
 			const resolvedTargetFolderId = targetFolderId === 'no-folder' ? undefined : targetFolderId
 			if (this.draggedFromFolder !== resolvedTargetFolderId) {
 				draggedWorkspace.folderId = resolvedTargetFolderId
@@ -774,13 +774,13 @@ export class WorkspacesView extends ItemView {
 		const workspaces = this.getOrderedWorkspaces()
 
 		// Initialize workspaceOrder if empty
-		if (!this.plugin.settings.workspaceOrder || this.plugin.settings.workspaceOrder.length === 0) {
-			this.plugin.settings.workspaceOrder = workspaces.map((w) => w.id)
+		if (!this.plugin.settings.ordering.workspaceOrder || this.plugin.settings.ordering.workspaceOrder.length === 0) {
+			this.plugin.settings.ordering.workspaceOrder = workspaces.map((w) => w.id)
 		}
 
-		const currentOrder = this.plugin.settings.workspaceOrder
+		const currentOrder = this.plugin.settings.ordering.workspaceOrder
 		if (currentOrder.includes(this.draggedWorkspaceId) && currentOrder.includes(targetWorkspaceId)) {
-			this.plugin.settings.workspaceOrder = reorder(currentOrder, this.draggedWorkspaceId, targetWorkspaceId)
+			this.plugin.settings.ordering.workspaceOrder = reorder(currentOrder, this.draggedWorkspaceId, targetWorkspaceId)
 			await this.plugin.saveSettings()
 			this.renderWorkspaces()
 		}
@@ -798,9 +798,9 @@ export class WorkspacesView extends ItemView {
 		}
 
 		// Reorder folders
-		const folderOrder = this.plugin.settings.folderOrder
+		const folderOrder = this.plugin.settings.ordering.folderOrder
 		if (folderOrder.includes(this.draggedFolderId) && folderOrder.includes(targetFolderId)) {
-			this.plugin.settings.folderOrder = reorder(folderOrder, this.draggedFolderId, targetFolderId)
+			this.plugin.settings.ordering.folderOrder = reorder(folderOrder, this.draggedFolderId, targetFolderId)
 			void this.plugin.saveSettings()
 			this.renderWorkspaces()
 		}

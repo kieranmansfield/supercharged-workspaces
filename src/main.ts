@@ -1,5 +1,6 @@
 import { Plugin, Menu } from 'obsidian'
-import { PluginSettings, DEFAULT_SETTINGS } from './types'
+import { PluginSettings } from './types'
+import { migrateSettings } from './settingsMigration'
 import { WorkspaceManager } from './WorkspaceManager'
 import { FolderManager } from './FolderManager'
 import { registerCommands } from './commands'
@@ -52,7 +53,7 @@ export default class SuperchargedWorkspacesPlugin extends Plugin {
 
 		// Add status bar item
 		this.statusBarItem = this.addStatusBarItem()
-		this.updateStatusBar(this.settings.activeWorkspaceId)
+		this.updateStatusBar(this.settings.view.activeWorkspaceId)
 
 		// Add settings tab
 		this.addSettingTab(new SettingsTab(this.app, this))
@@ -63,7 +64,7 @@ export default class SuperchargedWorkspacesPlugin extends Plugin {
 		// Listen for layout changes if auto-save is enabled
 		this.registerEvent(
 			this.app.workspace.on('layout-change', () => {
-				if (this.settings.autoSave && this.settings.activeWorkspaceId) {
+				if (this.settings.features.autoSave && this.settings.view.activeWorkspaceId) {
 					this.autoSaveWorkspace()
 				}
 			})
@@ -75,39 +76,20 @@ export default class SuperchargedWorkspacesPlugin extends Plugin {
 	}
 
 	async loadSettings() {
-		const data = (await this.loadData()) as Partial<PluginSettings> | null
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, data)
-		// Convert enabledCommands array back to Set if it was saved as array
-		if (data?.enabledCommands && Array.isArray(data.enabledCommands)) {
-			this.settings.enabledCommands = new Set(data.enabledCommands as string[])
-		} else {
-			this.settings.enabledCommands = new Set()
-		}
-		// Convert collapsedFolders array back to Set
-		if (data?.collapsedFolders && Array.isArray(data.collapsedFolders)) {
-			this.settings.collapsedFolders = new Set(data.collapsedFolders as string[])
-		} else {
-			this.settings.collapsedFolders = new Set()
-		}
-		// Initialize workspaceOrder if not present
-		if (!this.settings.workspaceOrder) {
-			this.settings.workspaceOrder = []
-		}
-		// Initialize folders if not present
-		if (!this.settings.folders) {
-			this.settings.folders = {}
-		}
-		if (!this.settings.folderOrder) {
-			this.settings.folderOrder = []
-		}
+		const data: unknown = await this.loadData()
+		this.settings = migrateSettings(data)
 	}
 
 	async saveSettings() {
 		// Convert Set to array for JSON serialization
-		const dataToSave = {
+		const dataToSave: Omit<PluginSettings, 'view'> & {
+			view: Omit<PluginSettings['view'], 'collapsedFolders'> & { collapsedFolders: string[] }
+		} = {
 			...this.settings,
-			enabledCommands: Array.from(this.settings.enabledCommands),
-			collapsedFolders: Array.from(this.settings.collapsedFolders),
+			view: {
+				...this.settings.view,
+				collapsedFolders: Array.from(this.settings.view.collapsedFolders),
+			},
 		}
 		await this.saveData(dataToSave)
 	}
@@ -115,10 +97,10 @@ export default class SuperchargedWorkspacesPlugin extends Plugin {
 	updateStatusBar(workspaceId: string | null) {
 		if (!this.statusBarItem) return
 
-		this.settings.activeWorkspaceId = workspaceId
+		this.settings.view.activeWorkspaceId = workspaceId
 		void this.saveSettings()
 
-		if (!this.settings.showStatusBar) {
+		if (!this.settings.ui.showStatusBar) {
 			this.statusBarItem.setCssProps({ display: 'none' })
 			return
 		}
@@ -155,16 +137,16 @@ export default class SuperchargedWorkspacesPlugin extends Plugin {
 	updateStatusBarVisibility() {
 		if (this.statusBarItem) {
 			this.statusBarItem.setCssProps({
-				display: this.settings.showStatusBar ? 'block' : 'none',
+				display: this.settings.ui.showStatusBar ? 'block' : 'none',
 			})
 		}
 	}
 
 	private autoSaveWorkspace() {
-		if (!this.settings.activeWorkspaceId) return
+		if (!this.settings.view.activeWorkspaceId) return
 
 		const layout = this.app.workspace.getLayout()
-		void this.workspaceManager.updateWorkspace(this.settings.activeWorkspaceId, {
+		void this.workspaceManager.updateWorkspace(this.settings.view.activeWorkspaceId, {
 			layout,
 			updatedAt: Date.now(),
 		})
@@ -183,7 +165,7 @@ export default class SuperchargedWorkspacesPlugin extends Plugin {
 			workspaces.forEach((workspace) => {
 				menu.addItem((item) => {
 					const icon = workspace.icon || '📋'
-					const isActive = workspace.id === this.settings.activeWorkspaceId
+					const isActive = workspace.id === this.settings.view.activeWorkspaceId
 
 					item
 						.setTitle(`${icon} ${workspace.name}`)
