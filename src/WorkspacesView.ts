@@ -5,6 +5,7 @@ import { WorkspaceConfig, WorkspaceFolder, SmartGroupType, FOLDER_COLORS } from 
 import SuperchargedWorkspacesPlugin from './main'
 import { createFolderPrompt } from './commands'
 import { applyOrder, reorder } from './ordering'
+import { filterBySmartGroup, groupWorkspacesByFolder, sortWorkspacesByPriority } from './workspaceFilters'
 
 export const VIEW_TYPE_WORKSPACES = 'supercharged-workspaces-view'
 
@@ -75,7 +76,7 @@ export class WorkspacesView extends ItemView {
 		}
 
 		// Apply smart group filter
-		const workspaces = this.filterBySmartGroup(allWorkspaces)
+		const workspaces = filterBySmartGroup(allWorkspaces, this.plugin.settings.activeSmartGroup)
 
 		// Main container
 		const listContainer = container.createDiv('workspaces-list')
@@ -164,42 +165,17 @@ export class WorkspacesView extends ItemView {
 		}
 	}
 
-	private filterBySmartGroup(workspaces: WorkspaceConfig[]): WorkspaceConfig[] {
-		const filter = this.plugin.settings.activeSmartGroup
-
-		switch (filter) {
-			case 'recent':
-				// Last 10 accessed workspaces
-				return workspaces
-					.filter((w) => w.lastAccessed)
-					.sort((a, b) => (b.lastAccessed || 0) - (a.lastAccessed || 0))
-					.slice(0, 10)
-
-			case 'pinned':
-				return workspaces.filter((w) => w.pinned)
-
-			case 'favorites':
-				return workspaces.filter((w) => w.starred)
-
-			case 'all':
-			default:
-				return workspaces
-		}
-	}
-
 	private renderFlatWorkspaceList(container: HTMLElement, workspaces: WorkspaceConfig[]) {
-		// Sort by priority: pinned > starred > regular
-		const sortedWorkspaces = this.sortWorkspacesByPriority([...workspaces])
+		const sortedWorkspaces = this.sortWorkspaces(workspaces)
 		sortedWorkspaces.forEach((workspace) => {
 			this.renderWorkspaceItem(container, workspace)
 		})
 	}
 
 	private renderFolderView(container: HTMLElement, workspaces: WorkspaceConfig[]) {
-		// Sort by priority: pinned > starred > regular
-		const sortedWorkspaces = this.sortWorkspacesByPriority([...workspaces])
+		const sortedWorkspaces = this.sortWorkspaces(workspaces)
 		const folders = this.getOrderedFolders()
-		const workspacesByFolder = this.groupWorkspacesByFolder(sortedWorkspaces)
+		const workspacesByFolder = groupWorkspacesByFolder(this.getOrderedWorkspaces(), sortedWorkspaces)
 
 		// Render all folders (even empty ones)
 		folders.forEach((folder) => {
@@ -398,33 +374,6 @@ export class WorkspacesView extends ItemView {
 		}
 
 		return applyOrder(folders, order, (f) => f.id)
-	}
-
-	private groupWorkspacesByFolder(
-		workspaces: WorkspaceConfig[]
-	): Map<string | null, WorkspaceConfig[]> {
-		const grouped = new Map<string | null, WorkspaceConfig[]>()
-
-		// Get ordered workspaces to preserve custom order
-		const orderedWorkspaces = this.getOrderedWorkspaces()
-		const workspaceSet = new Set(workspaces.map((w) => w.id))
-
-		// Group workspaces by folder while maintaining order
-		orderedWorkspaces.forEach((workspace) => {
-			// Only include workspaces from the input array (for filtering)
-			if (!workspaceSet.has(workspace.id)) return
-
-			const folderId = workspace.folderId || null
-			if (!grouped.has(folderId)) {
-				grouped.set(folderId, [])
-			}
-			const group = grouped.get(folderId)
-			if (group) {
-				group.push(workspace)
-			}
-		})
-
-		return grouped
 	}
 
 	private showWorkspaceContextMenu(workspaceId: string, event: MouseEvent) {
@@ -718,34 +667,15 @@ export class WorkspacesView extends ItemView {
 		const order = this.plugin.settings.workspaceOrder
 		const ordered = applyOrder(allWorkspaces, order, (w) => w.id)
 
-		// Sort by priority: pinned > starred > regular
-		return this.sortWorkspacesByPriority(ordered)
+		return this.sortWorkspaces(ordered)
 	}
 
-	private sortWorkspacesByPriority(workspaces: WorkspaceConfig[]): WorkspaceConfig[] {
-		// Only sort if at least one feature is enabled
-		const shouldSort = this.plugin.settings.enablePin || this.plugin.settings.enableStar
-
-		if (!shouldSort) {
-			return workspaces
-		}
-
-		return workspaces.sort((a, b) => {
-			// Pinned workspaces come first (if enabled)
-			if (this.plugin.settings.enablePin) {
-				if (a.pinned && !b.pinned) return -1
-				if (!a.pinned && b.pinned) return 1
-			}
-
-			// Then starred workspaces (if enabled)
-			if (this.plugin.settings.enableStar) {
-				if (a.starred && !b.starred) return -1
-				if (!a.starred && b.starred) return 1
-			}
-
-			// Otherwise maintain existing order (return 0 to preserve stability)
-			return 0
-		})
+	private sortWorkspaces(workspaces: WorkspaceConfig[]): WorkspaceConfig[] {
+		return sortWorkspacesByPriority(
+			workspaces,
+			this.plugin.settings.enablePin,
+			this.plugin.settings.enableStar
+		)
 	}
 
 	private onDragStart(e: DragEvent, workspaceId: string, folderId?: string | null) {

@@ -2,6 +2,7 @@ import { App, FuzzySuggestModal, Modal, Notice, Setting } from 'obsidian'
 import { WorkspaceConfig, WorkspaceFolder } from './types'
 import { WorkspaceManager } from './WorkspaceManager'
 import SuperchargedWorkspacesPlugin from './main'
+import { filterBySmartGroup } from './workspaceFilters'
 
 export class WorkspaceManagementModal extends Modal {
 	constructor(
@@ -459,21 +460,7 @@ export class FilteredWorkspaceFuzzySuggestModal extends BaseWorkspaceFuzzyModal 
 	}
 
 	getItems(): WorkspaceConfig[] {
-		const allWorkspaces = this.workspaceManager.getAllWorkspaces()
-
-		switch (this.filterType) {
-			case 'recent':
-				return allWorkspaces
-					.filter((w) => w.lastAccessed)
-					.sort((a, b) => (b.lastAccessed || 0) - (a.lastAccessed || 0))
-					.slice(0, 10)
-			case 'pinned':
-				return allWorkspaces.filter((w) => w.pinned)
-			case 'favorites':
-				return allWorkspaces.filter((w) => w.starred)
-			default:
-				return allWorkspaces
-		}
+		return filterBySmartGroup(this.workspaceManager.getAllWorkspaces(), this.filterType)
 	}
 
 	onChooseItem(workspace: WorkspaceConfig): void {
