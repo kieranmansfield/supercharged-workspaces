@@ -1,5 +1,5 @@
 import { App, PluginSettingTab, Setting } from 'obsidian'
-import SuperchargedWorkspacesPlugin from './main'
+import type SuperchargedWorkspacesPlugin from './main'
 import { WorkspaceConfig } from './types'
 
 export class SettingsTab extends PluginSettingTab {

@@ -8,7 +8,7 @@ import {
 	FilteredWorkspaceFuzzySuggestModal,
 } from './WorkspaceModal'
 import { WorkspaceConfig, FOLDER_COLORS } from './types'
-import SuperchargedWorkspacesPlugin from './main'
+import type SuperchargedWorkspacesPlugin from './main'
 
 export function registerCommands(
 	plugin: SuperchargedWorkspacesPlugin,

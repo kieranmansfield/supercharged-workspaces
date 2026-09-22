@@ -1,7 +1,7 @@
 import { ItemView, WorkspaceLeaf, setIcon } from 'obsidian'
 import { WorkspaceManager } from './WorkspaceManager'
 import { WorkspaceConfig, WorkspaceFolder, SmartGroupType } from './types'
-import SuperchargedWorkspacesPlugin from './main'
+import type SuperchargedWorkspacesPlugin from './main'
 import { createFolderPrompt } from './commands'
 import { applyOrder } from './ordering'
 import { filterBySmartGroup, groupWorkspacesByFolder, sortWorkspacesByPriority } from './workspaceFilters'

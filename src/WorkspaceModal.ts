@@ -1,7 +1,7 @@
 import { App, FuzzySuggestModal, Modal, Notice, Setting } from 'obsidian'
 import { WorkspaceConfig, WorkspaceFolder } from './types'
 import { WorkspaceManager } from './WorkspaceManager'
-import SuperchargedWorkspacesPlugin from './main'
+import type SuperchargedWorkspacesPlugin from './main'
 import { filterBySmartGroup } from './workspaceFilters'
 
 function addFolderDropdown(

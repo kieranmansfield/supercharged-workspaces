@@ -1,9 +1,6 @@
 import { App, Menu, Modal } from 'obsidian'
 import type SuperchargedWorkspacesPlugin from './main'
 import { WorkspaceManager } from './WorkspaceManager'
-// Part of the pre-existing main.ts-hub import cycle (WorkspaceModal -> main ->
-// WorkspacesView -> here); tracked as a separate cleanup, not a regression from this split
-// fallow-ignore-next-line circular-dependency
 import { RenameWorkspaceModal } from './WorkspaceModal'
 import { WorkspaceConfig, WorkspaceFolder, FOLDER_COLORS } from './types'
 
