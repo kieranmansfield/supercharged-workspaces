@@ -7,8 +7,7 @@ export class WorkspaceManagementModal extends Modal {
 	constructor(
 		app: App,
 		private workspaceManager: WorkspaceManager,
-		private plugin: SuperchargedWorkspacesPlugin,
-		private onWorkspaceLoad?: (id: string) => void
+		private plugin: SuperchargedWorkspacesPlugin
 	) {
 		super(app)
 	}
@@ -63,11 +62,7 @@ export class WorkspaceManagementModal extends Modal {
 			const loadBtn = actions.createEl('button', { text: 'Load' })
 			loadBtn.addEventListener('click', () => {
 				void (async () => {
-					await this.workspaceManager.loadWorkspace(workspace.id)
-					if (this.onWorkspaceLoad) {
-						this.onWorkspaceLoad(workspace.id)
-					}
-					this.plugin.refreshWorkspacesView()
+					await this.plugin.loadWorkspaceAndRefresh(workspace.id)
 					this.close()
 				})()
 			})
@@ -106,7 +101,7 @@ export class WorkspaceFuzzySuggestModal extends FuzzySuggestModal<WorkspaceConfi
 	constructor(
 		app: App,
 		private workspaceManager: WorkspaceManager,
-		private onWorkspaceLoad?: (id: string) => void
+		private plugin: SuperchargedWorkspacesPlugin
 	) {
 		super(app)
 		this.setPlaceholder('Type to search workspaces...')
@@ -152,12 +147,7 @@ export class WorkspaceFuzzySuggestModal extends FuzzySuggestModal<WorkspaceConfi
 	}
 
 	onChooseItem(workspace: WorkspaceConfig): void {
-		void (async () => {
-			await this.workspaceManager.loadWorkspace(workspace.id)
-			if (this.onWorkspaceLoad) {
-				this.onWorkspaceLoad(workspace.id)
-			}
-		})()
+		void this.plugin.loadWorkspaceAndRefresh(workspace.id)
 	}
 }
 
@@ -468,7 +458,7 @@ export class FilteredWorkspaceFuzzySuggestModal extends FuzzySuggestModal<Worksp
 		app: App,
 		private workspaceManager: WorkspaceManager,
 		private filterType: 'recent' | 'pinned' | 'favorites',
-		private onWorkspaceLoad?: (id: string) => void
+		private plugin: SuperchargedWorkspacesPlugin
 	) {
 		super(app)
 		const titles = {
@@ -532,11 +522,6 @@ export class FilteredWorkspaceFuzzySuggestModal extends FuzzySuggestModal<Worksp
 	}
 
 	onChooseItem(workspace: WorkspaceConfig): void {
-		void (async () => {
-			await this.workspaceManager.loadWorkspace(workspace.id)
-			if (this.onWorkspaceLoad) {
-				this.onWorkspaceLoad(workspace.id)
-			}
-		})()
+		void this.plugin.loadWorkspaceAndRefresh(workspace.id)
 	}
 }

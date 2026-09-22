@@ -1,7 +1,7 @@
 import { ItemView, WorkspaceLeaf, Menu, Modal, setIcon } from 'obsidian'
 import { WorkspaceManager } from './WorkspaceManager'
 import { RenameWorkspaceModal } from './WorkspaceModal'
-import { WorkspaceConfig, WorkspaceFolder, SmartGroupType } from './types'
+import { WorkspaceConfig, WorkspaceFolder, SmartGroupType, FOLDER_COLORS } from './types'
 import SuperchargedWorkspacesPlugin from './main'
 import { createFolderPrompt } from './commands'
 import { applyOrder, reorder } from './ordering'
@@ -369,14 +369,10 @@ export class WorkspacesView extends ItemView {
 
 		// Click to load
 		content.addEventListener('click', (e) => {
-			void (async () => {
-				if ((e.target as HTMLElement).classList.contains('workspace-drag-handle')) {
-					return
-				}
-				await this.workspaceManager.loadWorkspace(workspace.id)
-				this.plugin.updateStatusBar(workspace.id)
-				this.renderWorkspaces()
-			})()
+			if ((e.target as HTMLElement).classList.contains('workspace-drag-handle')) {
+				return
+			}
+			void this.plugin.loadWorkspaceAndRefresh(workspace.id)
 		})
 
 		// Context menu
@@ -392,7 +388,7 @@ export class WorkspacesView extends ItemView {
 	}
 
 	private getOrderedFolders(): WorkspaceFolder[] {
-		const folders = Object.values(this.plugin.settings.folders)
+		const folders = this.plugin.folderManager.getAll()
 		const order = this.plugin.settings.folderOrder
 
 		if (order.length === 0) {
@@ -441,11 +437,7 @@ export class WorkspacesView extends ItemView {
 			item
 				.setTitle('Load workspace')
 				.setIcon('play')
-				.onClick(async () => {
-					await this.workspaceManager.loadWorkspace(workspaceId)
-					this.plugin.updateStatusBar(workspaceId)
-					this.renderWorkspaces()
-				})
+				.onClick(() => void this.plugin.loadWorkspaceAndRefresh(workspaceId))
 		})
 
 		menu.addItem((item) => {
@@ -673,10 +665,10 @@ export class WorkspacesView extends ItemView {
 		})
 		saveBtn.addEventListener('click', () => {
 			if (input.value.trim()) {
-				folder.name = input.value.trim()
-				void this.plugin.saveSettings()
-				this.renderWorkspaces()
-				modal.close()
+				void this.plugin.folderManager.rename(folder.id, input.value.trim()).then(() => {
+					this.renderWorkspaces()
+					modal.close()
+				})
 			}
 		})
 
@@ -694,28 +686,17 @@ export class WorkspacesView extends ItemView {
 	}
 
 	private changeFolderColorPrompt(folder: WorkspaceFolder) {
-		const colors = [
-			{ name: 'Red', value: '#e74c3c' },
-			{ name: 'Blue', value: '#3498db' },
-			{ name: 'Green', value: '#2ecc71' },
-			{ name: 'Yellow', value: '#f39c12' },
-			{ name: 'Purple', value: '#9b59b6' },
-			{ name: 'Orange', value: '#e67e22' },
-			{ name: 'Pink', value: '#ff69b4' },
-			{ name: 'None', value: '' },
-		]
-
 		const menu = new Menu()
 
-		colors.forEach((color) => {
+		FOLDER_COLORS.forEach((color) => {
 			menu.addItem((item) => {
 				item
 					.setTitle(color.name)
 					.setChecked(folder.color === color.value)
 					.onClick(() => {
-						folder.color = color.value || undefined
-						void this.plugin.saveSettings()
-						this.renderWorkspaces()
+						void this.plugin.folderManager.setColor(folder.id, color.value).then(() => {
+							this.renderWorkspaces()
+						})
 					})
 			})
 		})
@@ -727,23 +708,9 @@ export class WorkspacesView extends ItemView {
 	}
 
 	private deleteFolder(folderId: string) {
-		// Move workspaces out of folder
-		const workspaces = this.workspaceManager.getAllWorkspaces()
-		workspaces.forEach((workspace) => {
-			if (workspace.folderId === folderId) {
-				delete workspace.folderId
-			}
+		void this.plugin.folderManager.delete(folderId).then(() => {
+			this.renderWorkspaces()
 		})
-
-		// Delete folder
-		delete this.plugin.settings.folders[folderId]
-		this.plugin.settings.folderOrder = this.plugin.settings.folderOrder.filter(
-			(id: string) => id !== folderId
-		)
-		this.plugin.settings.collapsedFolders.delete(folderId)
-
-		void this.plugin.saveSettings()
-		this.renderWorkspaces()
 	}
 
 	private getOrderedWorkspaces() {

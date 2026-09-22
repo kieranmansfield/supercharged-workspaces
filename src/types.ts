@@ -43,6 +43,17 @@ export interface PluginSettings {
 	enableRecent: boolean // Toggle recent workspaces functionality
 }
 
+export const FOLDER_COLORS: { name: string; value: string }[] = [
+	{ name: 'None', value: '' },
+	{ name: 'Red', value: '#e74c3c' },
+	{ name: 'Blue', value: '#3498db' },
+	{ name: 'Green', value: '#2ecc71' },
+	{ name: 'Yellow', value: '#f39c12' },
+	{ name: 'Purple', value: '#9b59b6' },
+	{ name: 'Orange', value: '#e67e22' },
+	{ name: 'Pink', value: '#ff69b4' },
+]
+
 export const DEFAULT_SETTINGS: PluginSettings = {
 	workspaces: {},
 	activeWorkspaceId: null,

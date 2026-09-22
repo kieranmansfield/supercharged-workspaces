@@ -1,6 +1,7 @@
 import { Plugin, Menu } from 'obsidian'
 import { PluginSettings, DEFAULT_SETTINGS } from './types'
 import { WorkspaceManager } from './WorkspaceManager'
+import { FolderManager } from './FolderManager'
 import { registerCommands } from './commands'
 import { SettingsTab } from './SettingsTab'
 import { WorkspaceFuzzySuggestModal } from './WorkspaceModal'
@@ -9,6 +10,7 @@ import { WorkspacesView, VIEW_TYPE_WORKSPACES } from './WorkspacesView'
 export default class SuperchargedWorkspacesPlugin extends Plugin {
 	settings!: PluginSettings
 	workspaceManager!: WorkspaceManager
+	folderManager!: FolderManager
 	statusBarItem: HTMLElement | null = null
 	workspaceCommands: string[] = []
 
@@ -19,6 +21,12 @@ export default class SuperchargedWorkspacesPlugin extends Plugin {
 		this.workspaceManager = new WorkspaceManager(
 			this.app,
 			() => this.settings.workspaces,
+			() => this.saveSettings()
+		)
+
+		// Initialize folder manager
+		this.folderManager = new FolderManager(
+			() => this.settings,
 			() => this.saveSettings()
 		)
 
@@ -39,9 +47,7 @@ export default class SuperchargedWorkspacesPlugin extends Plugin {
 
 		// Add ribbon icon
 		this.addRibbonIcon('layout', 'Load workspace', () => {
-			new WorkspaceFuzzySuggestModal(this.app, this.workspaceManager, (workspaceId: string) => {
-				this.updateStatusBar(workspaceId)
-			}).open()
+			new WorkspaceFuzzySuggestModal(this.app, this.workspaceManager, this).open()
 		})
 
 		// Add status bar item
@@ -141,6 +147,11 @@ export default class SuperchargedWorkspacesPlugin extends Plugin {
 		this.refreshWorkspacesView()
 	}
 
+	async loadWorkspaceAndRefresh(id: string): Promise<void> {
+		await this.workspaceManager.loadWorkspace(id)
+		this.updateStatusBar(id)
+	}
+
 	updateStatusBarVisibility() {
 		if (this.statusBarItem) {
 			this.statusBarItem.setCssProps({
@@ -177,10 +188,7 @@ export default class SuperchargedWorkspacesPlugin extends Plugin {
 					item
 						.setTitle(`${icon} ${workspace.name}`)
 						.setChecked(isActive)
-						.onClick(async () => {
-							await this.workspaceManager.loadWorkspace(workspace.id)
-							this.updateStatusBar(workspace.id)
-						})
+						.onClick(() => void this.loadWorkspaceAndRefresh(workspace.id))
 				})
 			})
 		}
@@ -240,10 +248,7 @@ export default class SuperchargedWorkspacesPlugin extends Plugin {
 					this.addCommand({
 						id: commandId,
 						name: commandName,
-						callback: async () => {
-							await this.workspaceManager.loadWorkspace(workspace.id)
-							this.updateStatusBar(workspace.id)
-						},
+						callback: () => this.loadWorkspaceAndRefresh(workspace.id),
 					})
 
 					this.workspaceCommands.push(commandId)

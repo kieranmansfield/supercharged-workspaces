@@ -7,7 +7,7 @@ import {
 	EditWorkspaceFuzzySuggestModal,
 	FilteredWorkspaceFuzzySuggestModal,
 } from './WorkspaceModal'
-import { WorkspaceConfig, WorkspaceFolder } from './types'
+import { WorkspaceConfig, FOLDER_COLORS } from './types'
 import SuperchargedWorkspacesPlugin from './main'
 
 export function registerCommands(
@@ -56,14 +56,7 @@ export function registerCommands(
 		id: 'manage-workspaces',
 		name: 'Manage workspaces',
 		callback: () => {
-			const modal = new WorkspaceManagementModal(
-				plugin.app,
-				workspaceManager,
-				plugin,
-				(workspaceId: string) => {
-					updateStatusBar(workspaceId)
-				}
-			)
+			const modal = new WorkspaceManagementModal(plugin.app, workspaceManager, plugin)
 			modal.open()
 		},
 	})
@@ -73,14 +66,7 @@ export function registerCommands(
 		id: 'load-workspace',
 		name: 'Load workspace',
 		callback: () => {
-			const modal = new WorkspaceFuzzySuggestModal(
-				plugin.app,
-				workspaceManager,
-				(workspaceId: string) => {
-					updateStatusBar(workspaceId)
-					plugin.refreshWorkspacesView()
-				}
-			)
+			const modal = new WorkspaceFuzzySuggestModal(plugin.app, workspaceManager, plugin)
 			modal.open()
 		},
 	})
@@ -141,10 +127,7 @@ export function registerCommands(
 					plugin.app,
 					workspaceManager,
 					'recent',
-					(workspaceId: string) => {
-						updateStatusBar(workspaceId)
-						plugin.refreshWorkspacesView()
-					}
+					plugin
 				)
 				modal.open()
 			},
@@ -161,10 +144,7 @@ export function registerCommands(
 					plugin.app,
 					workspaceManager,
 					'pinned',
-					(workspaceId: string) => {
-						updateStatusBar(workspaceId)
-						plugin.refreshWorkspacesView()
-					}
+					plugin
 				)
 				modal.open()
 			},
@@ -181,10 +161,7 @@ export function registerCommands(
 					plugin.app,
 					workspaceManager,
 					'favorites',
-					(workspaceId: string) => {
-						updateStatusBar(workspaceId)
-						plugin.refreshWorkspacesView()
-					}
+					plugin
 				)
 				modal.open()
 			},
@@ -257,18 +234,7 @@ export function createFolderPrompt(plugin: SuperchargedWorkspacesPlugin) {
 	const colorContainer = modal.contentEl.createDiv('folder-color-picker')
 	colorContainer.setCssProps({ display: 'flex', gap: '8px', marginBottom: '1em' })
 
-	const colors = [
-		{ name: 'None', value: '' },
-		{ name: 'Red', value: '#e74c3c' },
-		{ name: 'Blue', value: '#3498db' },
-		{ name: 'Green', value: '#2ecc71' },
-		{ name: 'Yellow', value: '#f39c12' },
-		{ name: 'Purple', value: '#9b59b6' },
-		{ name: 'Orange', value: '#e67e22' },
-		{ name: 'Pink', value: '#ff69b4' },
-	]
-
-	colors.forEach((color) => {
+	FOLDER_COLORS.forEach((color) => {
 		const colorBtn = colorContainer.createEl('button', {
 			cls: 'color-swatch',
 		})
@@ -313,22 +279,7 @@ export function createFolderPrompt(plugin: SuperchargedWorkspacesPlugin) {
 				return
 			}
 
-			const settings = plugin.settings
-			const folderId = `folder-${Date.now()}`
-
-			const newFolder: WorkspaceFolder = {
-				id: folderId,
-				name: name,
-				icon: folderIcon.trim() || undefined,
-				color: folderColor || undefined,
-				order: Object.keys(settings.folders).length,
-				collapsed: false,
-			}
-
-			settings.folders[folderId] = newFolder
-			settings.folderOrder.push(folderId)
-
-			await plugin.saveSettings()
+			await plugin.folderManager.create(name, folderIcon.trim(), folderColor)
 
 			// Refresh the view
 			plugin.refreshWorkspacesView()
