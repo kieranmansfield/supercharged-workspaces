@@ -4,6 +4,7 @@ import { RenameWorkspaceModal } from './WorkspaceModal'
 import { WorkspaceConfig, WorkspaceFolder, SmartGroupType } from './types'
 import SuperchargedWorkspacesPlugin from './main'
 import { createFolderPrompt } from './commands'
+import { applyOrder, reorder } from './ordering'
 
 export const VIEW_TYPE_WORKSPACES = 'supercharged-workspaces-view'
 
@@ -400,23 +401,7 @@ export class WorkspacesView extends ItemView {
 			)
 		}
 
-		const ordered: WorkspaceFolder[] = []
-		const folderMap = new Map(folders.map((f: WorkspaceFolder) => [f.id, f]))
-
-		for (const id of order) {
-			const folder = folderMap.get(id)
-			if (folder) {
-				ordered.push(folder)
-				folderMap.delete(id)
-			}
-		}
-
-		// Add any new folders not in order
-		for (const folder of folderMap.values()) {
-			ordered.push(folder)
-		}
-
-		return ordered
+		return applyOrder(folders, order, (f) => f.id)
 	}
 
 	private groupWorkspacesByFolder(
@@ -764,29 +749,7 @@ export class WorkspacesView extends ItemView {
 	private getOrderedWorkspaces() {
 		const allWorkspaces = this.workspaceManager.getAllWorkspaces()
 		const order = this.plugin.settings.workspaceOrder
-
-		// If no custom order, return default (sorted by updatedAt)
-		if (!order || order.length === 0) {
-			return this.sortWorkspacesByPriority(allWorkspaces)
-		}
-
-		// Sort by custom order
-		const ordered = []
-		const workspaceMap = new Map(allWorkspaces.map((w) => [w.id, w]))
-
-		// Add workspaces in custom order
-		for (const id of order) {
-			const workspace = workspaceMap.get(id)
-			if (workspace) {
-				ordered.push(workspace)
-				workspaceMap.delete(id)
-			}
-		}
-
-		// Add any new workspaces not in order yet
-		for (const workspace of workspaceMap.values()) {
-			ordered.push(workspace)
-		}
+		const ordered = applyOrder(allWorkspaces, order, (w) => w.id)
 
 		// Sort by priority: pinned > starred > regular
 		return this.sortWorkspacesByPriority(ordered)
@@ -918,32 +881,10 @@ export class WorkspacesView extends ItemView {
 			this.plugin.settings.workspaceOrder = workspaces.map((w) => w.id)
 		}
 
-		const newOrder = [...this.plugin.settings.workspaceOrder]
-
-		const draggedIndex = newOrder.indexOf(this.draggedWorkspaceId)
-		const targetIndex = newOrder.indexOf(targetWorkspaceId)
-
-		if (draggedIndex !== -1 && targetIndex !== -1) {
-			// Remove from old position
-			newOrder.splice(draggedIndex, 1)
-
-			// Calculate new position (account for removal)
-			let insertIndex = targetIndex
-			if (draggedIndex < targetIndex) {
-				// Dragging down, insert after target
-				insertIndex = targetIndex
-			} else {
-				// Dragging up, insert before target
-				insertIndex = targetIndex
-			}
-
-			newOrder.splice(insertIndex, 0, this.draggedWorkspaceId)
-
-			// Save new order
-			this.plugin.settings.workspaceOrder = newOrder
+		const currentOrder = this.plugin.settings.workspaceOrder
+		if (currentOrder.includes(this.draggedWorkspaceId) && currentOrder.includes(targetWorkspaceId)) {
+			this.plugin.settings.workspaceOrder = reorder(currentOrder, this.draggedWorkspaceId, targetWorkspaceId)
 			await this.plugin.saveSettings()
-
-			// Re-render
 			this.renderWorkspaces()
 		}
 	}
@@ -960,31 +901,10 @@ export class WorkspacesView extends ItemView {
 		}
 
 		// Reorder folders
-		const folderOrder = [...this.plugin.settings.folderOrder]
-		const draggedIndex = folderOrder.indexOf(this.draggedFolderId)
-		const targetIndex = folderOrder.indexOf(targetFolderId)
-
-		if (draggedIndex !== -1 && targetIndex !== -1) {
-			// Remove from old position
-			folderOrder.splice(draggedIndex, 1)
-
-			// Calculate new position (account for removal)
-			let insertIndex = targetIndex
-			if (draggedIndex < targetIndex) {
-				// Dragging down, insert after target
-				insertIndex = targetIndex
-			} else {
-				// Dragging up, insert before target
-				insertIndex = targetIndex
-			}
-
-			folderOrder.splice(insertIndex, 0, this.draggedFolderId)
-
-			// Save new order
-			this.plugin.settings.folderOrder = folderOrder
+		const folderOrder = this.plugin.settings.folderOrder
+		if (folderOrder.includes(this.draggedFolderId) && folderOrder.includes(targetFolderId)) {
+			this.plugin.settings.folderOrder = reorder(folderOrder, this.draggedFolderId, targetFolderId)
 			void this.plugin.saveSettings()
-
-			// Re-render
 			this.renderWorkspaces()
 		}
 	}
