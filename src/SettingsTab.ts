@@ -3,6 +3,7 @@ import type SuperchargedWorkspacesPlugin from './main'
 import { WorkspaceConfig } from './types'
 import { NewWorkspaceModal } from './WorkspaceModal'
 import { applyOrder } from './ordering'
+import { IconPickerModal, isLucideIcon, LUCIDE_PREFIX } from './iconUtils'
 
 const WORKSPACE_KEY_PREFIX = 'workspace:'
 const OPTIONAL_TEXT_FIELDS = new Set<WorkspaceField>(['icon', 'description'])
@@ -43,6 +44,7 @@ export class SettingsTab extends PluginSettingTab {
 			if (parsed.field === 'pinned' || parsed.field === 'starred' || parsed.field === 'isTemplate' || parsed.field === 'commandEnabled') {
 				return workspace[parsed.field] ?? false
 			}
+			if (parsed.field === 'icon') return isLucideIcon(workspace.icon) ? '' : (workspace.icon ?? '')
 			return workspace[parsed.field] ?? ''
 		}
 
@@ -160,27 +162,16 @@ export class SettingsTab extends PluginSettingTab {
 		return options
 	}
 
-	private workspacePageItems(workspace: WorkspaceConfig): SettingDefinitionItem[] {
-		const key = (field: WorkspaceField) => `${WORKSPACE_KEY_PREFIX}${workspace.id}:${field}`
-		const items: SettingDefinitionItem[] = [
-			{ name: 'Workspace name', control: { type: 'text', key: key('name') } },
-			{ name: 'Emoji icon', desc: 'Optional', control: { type: 'text', key: key('icon') } },
-			{
-				name: 'Description',
-				desc: 'Optional',
-				control: { type: 'textarea', key: key('description') },
-			},
-			{
-				name: 'Load via command palette',
-				desc: 'Register a dedicated command to load this workspace',
-				control: { type: 'toggle', key: key('commandEnabled') },
-			},
-			{
-				name: 'Use as template',
-				desc: 'Make this workspace available as a starting point for new workspaces',
-				control: { type: 'toggle', key: key('isTemplate') },
-			},
-		]
+	private iconActionDesc(icon: string | undefined): string {
+		if (isLucideIcon(icon)) return `Currently: ${(icon as string).slice(LUCIDE_PREFIX.length)}`
+		return 'Pick from a searchable list instead of typing an emoji'
+	}
+
+	private optionalWorkspaceItems(
+		workspace: WorkspaceConfig,
+		key: (field: WorkspaceField) => string
+	): SettingDefinitionItem[] {
+		const items: SettingDefinitionItem[] = []
 
 		if (this.plugin.settings.features.enablePin) {
 			items.push({
@@ -208,10 +199,48 @@ export class SettingsTab extends PluginSettingTab {
 		return items
 	}
 
+	private workspacePageItems(workspace: WorkspaceConfig): SettingDefinitionItem[] {
+		const key = (field: WorkspaceField) => `${WORKSPACE_KEY_PREFIX}${workspace.id}:${field}`
+		return [
+			{ name: 'Workspace name', control: { type: 'text', key: key('name') } },
+			{ name: 'Emoji icon', desc: 'Optional', control: { type: 'text', key: key('icon') } },
+			{
+				name: 'Choose a built-in icon',
+				desc: this.iconActionDesc(workspace.icon),
+				action: () => {
+					new IconPickerModal(this.app, (icon) => {
+						void this.setWorkspaceField(workspace.id, 'icon', icon).then(() => this.update())
+					}).open()
+				},
+			},
+			{
+				name: 'Description',
+				desc: 'Optional',
+				control: { type: 'textarea', key: key('description') },
+			},
+			{
+				name: 'Load via command palette',
+				desc: 'Register a dedicated command to load this workspace',
+				control: { type: 'toggle', key: key('commandEnabled') },
+			},
+			{
+				name: 'Use as template',
+				desc: 'Make this workspace available as a starting point for new workspaces',
+				control: { type: 'toggle', key: key('isTemplate') },
+			},
+			...this.optionalWorkspaceItems(workspace, key),
+		]
+	}
+
+	private workspaceDisplayName(workspace: WorkspaceConfig): string {
+		if (workspace.icon && !isLucideIcon(workspace.icon)) return `${workspace.icon} ${workspace.name}`
+		return workspace.name
+	}
+
 	private workspaceListItems(workspaces: WorkspaceConfig[]): SettingDefinitionPage[] {
 		return workspaces.map((workspace) => ({
 			type: 'page',
-			name: (workspace.icon ? workspace.icon + ' ' : '') + workspace.name,
+			name: this.workspaceDisplayName(workspace),
 			desc: workspace.description || undefined,
 			displayValue: workspace.isTemplate ? 'Template' : undefined,
 			items: this.workspacePageItems(workspace),

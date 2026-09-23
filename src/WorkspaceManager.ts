@@ -1,6 +1,7 @@
 import { App, Notice } from 'obsidian'
 import { WorkspaceConfig } from './types'
 import { generateUniqueId } from './id'
+import { compareByName } from './workspaceFilters'
 
 export const CURRENT_LAYOUT = '__current__'
 
@@ -151,7 +152,7 @@ export class WorkspaceManager {
 	}
 
 	getAllWorkspaces(): WorkspaceConfig[] {
-		return Object.values(this.getWorkspaces()).sort((a, b) => b.updatedAt - a.updatedAt)
+		return Object.values(this.getWorkspaces()).sort(compareByName)
 	}
 
 	private generateId(): string {

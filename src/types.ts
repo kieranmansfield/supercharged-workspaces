@@ -70,7 +70,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 	features: {
 		autoSave: false,
 		enableFolders: true,
-		enableDragAndDrop: false,
+		enableDragAndDrop: true,
 		enablePin: false,
 		enableStar: false,
 		enableRecent: false,

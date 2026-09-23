@@ -3,6 +3,7 @@ import type SuperchargedWorkspacesPlugin from './main'
 import { WorkspaceManager } from './WorkspaceManager'
 import { RenameWorkspaceModal } from './WorkspaceModal'
 import { WorkspaceConfig, WorkspaceFolder, FOLDER_COLORS } from './types'
+import { IconPickerModal, isLucideIcon, renderIcon } from './iconUtils'
 
 // Owns the right-click context menus and their follow-up prompts for
 // workspaces and folders in WorkspacesView.
@@ -143,6 +144,15 @@ export class WorkspaceContextMenus {
 				})
 		})
 
+		menu.addItem((item) => {
+			item
+				.setTitle('Change icon')
+				.setIcon('image-plus')
+				.onClick(() => {
+					this.changeFolderIconPrompt(folder)
+				})
+		})
+
 		menu.addSeparator()
 
 		menu.addItem((item) => {
@@ -231,6 +241,30 @@ export class WorkspaceContextMenus {
 		menu.showAtMouseEvent(event)
 	}
 
+	// Wires a Cancel/Save button pair plus Enter-to-save/Escape-to-cancel on
+	// the input, shared by the folder rename and icon prompts.
+	private addSaveCancelPrompt(modal: Modal, input: HTMLInputElement, onSave: () => void) {
+		const buttonContainer = modal.contentEl.createDiv('modal-button-container')
+
+		buttonContainer.createEl('button', { text: 'Cancel' }).addEventListener('click', () => {
+			modal.close()
+		})
+
+		const saveBtn = buttonContainer.createEl('button', {
+			text: 'Save',
+			cls: 'mod-cta',
+		})
+		saveBtn.addEventListener('click', onSave)
+
+		input.addEventListener('keydown', (e) => {
+			if (e.key === 'Enter') {
+				saveBtn.click()
+			} else if (e.key === 'Escape') {
+				modal.close()
+			}
+		})
+	}
+
 	private renameFolderPrompt(folder: WorkspaceFolder) {
 		const modal = new Modal(this.app)
 		modal.titleEl.setText('Rename folder')
@@ -244,17 +278,7 @@ export class WorkspaceContextMenus {
 			marginBottom: '1em',
 		})
 
-		const buttonContainer = modal.contentEl.createDiv('modal-button-container')
-
-		buttonContainer.createEl('button', { text: 'Cancel' }).addEventListener('click', () => {
-			modal.close()
-		})
-
-		const saveBtn = buttonContainer.createEl('button', {
-			text: 'Save',
-			cls: 'mod-cta',
-		})
-		saveBtn.addEventListener('click', () => {
+		this.addSaveCancelPrompt(modal, input, () => {
 			if (input.value.trim()) {
 				void this.plugin.folderManager.rename(folder.id, input.value.trim()).then(() => {
 					this.onChange()
@@ -263,17 +287,44 @@ export class WorkspaceContextMenus {
 			}
 		})
 
-		input.addEventListener('keydown', (e) => {
-			if (e.key === 'Enter') {
-				saveBtn.click()
-			} else if (e.key === 'Escape') {
+		modal.open()
+		input.focus()
+		input.select()
+	}
+
+	private changeFolderIconPrompt(folder: WorkspaceFolder) {
+		const modal = new Modal(this.app)
+		modal.titleEl.setText('Change folder icon')
+
+		const preview = modal.contentEl.createSpan({ cls: 'icon-field-preview' })
+		renderIcon(preview, folder.icon, '📁')
+
+		const input = modal.contentEl.createEl('input', {
+			type: 'text',
+			value: isLucideIcon(folder.icon) ? '' : folder.icon || '',
+			placeholder: 'Emoji',
+		})
+		input.setCssProps({ width: '100%', marginTop: '0.75em', marginBottom: '0.75em' })
+
+		const pickBtn = modal.contentEl.createEl('button', { text: 'Choose a built-in icon' })
+		pickBtn.addEventListener('click', () => {
+			new IconPickerModal(this.app, (icon) => {
+				void this.plugin.folderManager.setIcon(folder.id, icon).then(() => {
+					this.onChange()
+					modal.close()
+				})
+			}).open()
+		})
+
+		this.addSaveCancelPrompt(modal, input, () => {
+			void this.plugin.folderManager.setIcon(folder.id, input.value.trim() || undefined).then(() => {
+				this.onChange()
 				modal.close()
-			}
+			})
 		})
 
 		modal.open()
 		input.focus()
-		input.select()
 	}
 
 	private changeFolderColorPrompt(folder: WorkspaceFolder) {

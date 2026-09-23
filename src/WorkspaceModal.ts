@@ -1,8 +1,9 @@
-import { App, FuzzySuggestModal, Modal, Notice, Setting } from 'obsidian'
+import { App, FuzzySuggestModal, Modal, Notice, Setting, TextComponent } from 'obsidian'
 import { WorkspaceConfig, WorkspaceFolder } from './types'
 import { WorkspaceManager, CURRENT_LAYOUT } from './WorkspaceManager'
 import type SuperchargedWorkspacesPlugin from './main'
 import { filterBySmartGroup } from './workspaceFilters'
+import { IconPickerModal, isLucideIcon, renderIcon } from './iconUtils'
 
 function addFolderDropdown(
 	contentEl: HTMLElement,
@@ -31,11 +32,44 @@ function addFolderDropdown(
 		})
 }
 
-function addIconField(contentEl: HTMLElement, value: string, onChange: (value: string) => void) {
-	new Setting(contentEl)
-		.setName('Emoji icon (optional)')
-		.setDesc('Enter a single emoji to identify this workspace')
-		.addText((text) => text.setPlaceholder('').setValue(value).onChange(onChange))
+function addIconField(
+	app: App,
+	contentEl: HTMLElement,
+	value: string,
+	onChange: (value: string) => void
+) {
+	const setting = new Setting(contentEl)
+		.setName('Icon')
+		.setDesc('Type an emoji, or pick a built-in icon')
+
+	const preview = setting.nameEl.createSpan({ cls: 'icon-field-preview' })
+	setting.nameEl.prepend(preview)
+	renderIcon(preview, value, '📋')
+
+	let textComponent!: TextComponent
+	setting.addText((text) => {
+		textComponent = text
+		text
+			.setPlaceholder('Emoji')
+			.setValue(isLucideIcon(value) ? '' : value)
+			.onChange((v) => {
+				onChange(v)
+				renderIcon(preview, v, '📋')
+			})
+	})
+
+	setting.addExtraButton((btn) =>
+		btn
+			.setIcon('image-plus')
+			.setTooltip('Choose a built-in icon')
+			.onClick(() => {
+				new IconPickerModal(app, (icon) => {
+					onChange(icon)
+					textComponent.setValue('')
+					renderIcon(preview, icon, '📋')
+				}).open()
+			})
+	)
 }
 
 function addNameField(contentEl: HTMLElement, value: string, onChange: (value: string) => void) {
@@ -59,10 +93,11 @@ function addDescriptionField(
 }
 
 function addWorkspaceFields(
+	app: App,
 	contentEl: HTMLElement,
 	target: { icon: string; name: string; description: string }
 ) {
-	addIconField(contentEl, target.icon, (value) => (target.icon = value))
+	addIconField(app, contentEl, target.icon, (value) => (target.icon = value))
 	addNameField(contentEl, target.name, (value) => (target.name = value))
 	addDescriptionField(contentEl, target.description, (value) => (target.description = value))
 }
@@ -123,10 +158,8 @@ abstract class BaseWorkspaceFuzzyModal extends FuzzySuggestModal<WorkspaceConfig
 				cls: 'workspace-fuzzy-name',
 			})
 			if (workspace.icon) {
-				nameContainer.createSpan({
-					text: workspace.icon + ' ',
-					cls: 'workspace-icon',
-				})
+				const iconEl = nameContainer.createSpan({ cls: 'workspace-icon' })
+				renderIcon(iconEl, workspace.icon, '')
 			}
 			nameContainer.createSpan({ text: workspace.name })
 			if (workspace.description) {
@@ -182,7 +215,7 @@ export class SaveWorkspaceModal extends Modal {
 
 		contentEl.createEl('h2', { text: 'Save workspace' })
 
-		addWorkspaceFields(contentEl, this)
+		addWorkspaceFields(this.app, contentEl, this)
 
 		addFolderDropdown(contentEl, this.plugin, 'Folder (optional)', this.folderId, (folderId) => {
 			this.folderId = folderId
@@ -238,7 +271,7 @@ export class NewWorkspaceModal extends Modal {
 
 		contentEl.createEl('h2', { text: 'New workspace' })
 
-		addWorkspaceFields(contentEl, this)
+		addWorkspaceFields(this.app, contentEl, this)
 
 		const templates = this.workspaceManager.getAllWorkspaces().filter((w) => w.isTemplate)
 		new Setting(contentEl)
@@ -313,7 +346,7 @@ export class RenameWorkspaceModal extends Modal {
 
 		contentEl.createEl('h2', { text: 'Edit workspace' })
 
-		addWorkspaceFields(contentEl, this)
+		addWorkspaceFields(this.app, contentEl, this)
 
 		new Setting(contentEl)
 			.setName('Pin workspace')

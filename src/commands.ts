@@ -9,6 +9,7 @@ import {
 } from './WorkspaceModal'
 import { WorkspaceConfig, FOLDER_COLORS } from './types'
 import type SuperchargedWorkspacesPlugin from './main'
+import { IconPickerModal } from './iconUtils'
 
 export function registerCommands(
 	plugin: SuperchargedWorkspacesPlugin,
@@ -213,9 +214,18 @@ export function createFolderPrompt(plugin: SuperchargedWorkspacesPlugin) {
 		type: 'text',
 		placeholder: '📁',
 	})
-	iconInput.setCssProps({ width: '100%', marginBottom: '1em' })
+	iconInput.setCssProps({ width: '100%', marginBottom: '0.5em' })
 	iconInput.addEventListener('input', (e) => {
 		folderIcon = (e.target as HTMLInputElement).value
+	})
+
+	const pickIconBtn = modal.contentEl.createEl('button', { text: 'Choose a built-in icon' })
+	pickIconBtn.setCssProps({ marginBottom: '1em' })
+	pickIconBtn.addEventListener('click', () => {
+		new IconPickerModal(plugin.app, (icon) => {
+			folderIcon = icon
+			iconInput.value = ''
+		}).open()
 	})
 
 	// Color picker

@@ -8,6 +8,42 @@
 	margin-bottom: 1.5em;
 }
 
+.icon-field-preview {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 1.4em;
+	height: 1.4em;
+	margin-right: 0.4em;
+	font-size: 1.1em;
+	flex-shrink: 0;
+}
+
+.icon-field-preview svg {
+	width: 1em;
+	height: 1em;
+}
+
+.icon-picker-item {
+	display: flex;
+	align-items: center;
+	gap: 0.6em;
+}
+
+.icon-picker-icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 1.2em;
+	height: 1.2em;
+	flex-shrink: 0;
+}
+
+.icon-picker-icon svg {
+	width: 1em;
+	height: 1em;
+}
+
 .supercharged-workspaces-empty {
 	color: var(--text-muted);
 	text-align: center;
@@ -276,30 +312,17 @@
 	width: 100%;
 }
 
-.workspace-drag-handle {
-	cursor: grab;
-	color: var(--text-faint);
-	font-size: 1em;
-	flex-shrink: 0;
-	opacity: 0;
-	transition: opacity 0.15s ease;
-	user-select: none;
-	padding: 2px 4px;
-	margin-left: -4px;
-}
-
-.workspace-item:hover .workspace-drag-handle {
-	opacity: 1;
-}
-
-.workspace-drag-handle:active {
-	cursor: grabbing;
-}
-
 .workspace-item-icon {
 	font-size: 1.2em;
 	flex-shrink: 0;
 	line-height: 1;
+	display: flex;
+	align-items: center;
+}
+
+.workspace-item-icon svg {
+	width: 1em;
+	height: 1em;
 }
 
 .workspace-item-name {
@@ -310,54 +333,13 @@
 	font-size: 0.9em;
 }
 
-/* Smart Group Filter Bar */
-.smart-group-bar {
-	display: flex;
-	gap: 4px;
-	padding: 8px;
-	border-bottom: 1px solid var(--background-modifier-border);
-	background: var(--background-secondary);
+/* Header actions (native pane-header icon buttons, same style as File explorer/Bookmarks) */
+.supercharged-workspaces-header .view-action.is-hidden {
+	display: none;
 }
 
-.smart-group-button {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	padding: 6px 8px;
-	border-radius: 4px;
-	border: 1px solid var(--background-modifier-border);
-	background: var(--background-primary);
-	color: var(--text-muted);
-	cursor: pointer;
-	font-size: 0.85em;
-	transition: all 0.15s ease;
-	min-width: 32px;
-}
-
-.smart-group-button.add-folder-button {
-	margin-left: auto;
-}
-
-.smart-group-button:hover {
-	background: var(--background-modifier-hover);
-	color: var(--text-normal);
-}
-
-.smart-group-button.is-active {
-	background: var(--interactive-accent);
-	color: var(--text-on-accent);
-	border-color: var(--interactive-accent);
-}
-
-.smart-group-icon {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-}
-
-.smart-group-icon svg {
-	width: 16px;
-	height: 16px;
+.supercharged-workspaces-header .view-action.is-active {
+	color: var(--interactive-accent);
 }
 
 /* Workspace Folders */
@@ -413,6 +395,13 @@
 	font-size: 1.1em;
 	flex-shrink: 0;
 	line-height: 1;
+	display: flex;
+	align-items: center;
+}
+
+.folder-icon svg {
+	width: 1em;
+	height: 1em;
 }
 
 .folder-name {

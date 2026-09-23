@@ -43,6 +43,14 @@ export class FolderManager {
 		await this.saveSettings()
 	}
 
+	async setIcon(id: string, icon: string | undefined): Promise<void> {
+		const folder = this.getById(id)
+		if (!folder) return
+
+		folder.icon = icon || undefined
+		await this.saveSettings()
+	}
+
 	async delete(id: string): Promise<void> {
 		const settings = this.getSettings()
 		if (!settings.folders[id]) return

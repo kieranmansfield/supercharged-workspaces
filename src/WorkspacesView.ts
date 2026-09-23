@@ -7,14 +7,23 @@ import { applyOrder } from './ordering'
 import { filterBySmartGroup, groupWorkspacesByFolder, sortWorkspacesByPriority } from './workspaceFilters'
 import { DragDropController } from './dragDrop'
 import { WorkspaceContextMenus } from './contextMenus'
+import { renderIcon } from './iconUtils'
 
 export const VIEW_TYPE_WORKSPACES = 'supercharged-workspaces-view'
+
+const SMART_GROUP_ACTIONS: Array<{ id: SmartGroupType | null; label: string; icon: string }> = [
+	{ id: null, label: 'All workspaces', icon: 'layout-grid' },
+	{ id: 'recent', label: 'Recent workspaces', icon: 'clock' },
+	{ id: 'pinned', label: 'Pinned workspaces', icon: 'pin' },
+	{ id: 'favorites', label: 'Favorite workspaces', icon: 'star' },
+]
 
 export class WorkspacesView extends ItemView {
 	private plugin: SuperchargedWorkspacesPlugin
 	private workspaceManager: WorkspaceManager
 	private dragDrop: DragDropController
 	private contextMenus: WorkspaceContextMenus
+	private headerActions = new Map<string, HTMLElement>()
 
 	constructor(leaf: WorkspaceLeaf, plugin: SuperchargedWorkspacesPlugin) {
 		super(leaf)
@@ -53,13 +62,55 @@ export class WorkspacesView extends ItemView {
 		const container = this.containerEl.children[1]
 		container.empty()
 		container.addClass('workspaces-view')
+		this.containerEl.children[0].addClass('supercharged-workspaces-header')
 
+		this.setupHeaderActions()
 		this.renderWorkspaces()
+	}
+
+	private setupHeaderActions() {
+		SMART_GROUP_ACTIONS.forEach((group) => {
+			const key = group.id ?? 'all'
+			const el = this.addAction(group.icon, group.label, () => {
+				this.plugin.settings.view.activeSmartGroup = group.id
+				void this.plugin.saveSettings()
+				this.renderWorkspaces()
+			})
+			this.headerActions.set(key, el)
+		})
+
+		this.headerActions.set(
+			'addFolder',
+			this.addAction('folder-plus', 'New folder', (e) => {
+				e.preventDefault()
+				e.stopPropagation()
+				createFolderPrompt(this.plugin)
+			})
+		)
+	}
+
+	private syncHeaderActions() {
+		const features = this.plugin.settings.features
+		this.toggleHeaderAction('recent', features.enableRecent)
+		this.toggleHeaderAction('pinned', features.enablePin)
+		this.toggleHeaderAction('favorites', features.enableStar)
+		this.toggleHeaderAction('addFolder', features.enableFolders)
+
+		const active = this.plugin.settings.view.activeSmartGroup
+		SMART_GROUP_ACTIONS.forEach((group) => {
+			this.headerActions.get(group.id ?? 'all')?.toggleClass('is-active', active === group.id)
+		})
+	}
+
+	private toggleHeaderAction(key: string, visible: boolean) {
+		const el = this.headerActions.get(key)
+		if (el) el.toggleClass('is-hidden', !visible)
 	}
 
 	renderWorkspaces() {
 		const container = this.containerEl.children[1] as HTMLElement
 		container.empty()
+		this.syncHeaderActions()
 
 		const allWorkspaces = this.workspaceManager.getAllWorkspaces()
 
@@ -74,18 +125,6 @@ export class WorkspacesView extends ItemView {
 				cls: 'workspaces-empty-hint',
 			})
 			return
-		}
-
-		// Check if smart group bar should be shown
-		const shouldShowSmartGroupBar =
-			this.plugin.settings.features.enableRecent ||
-			this.plugin.settings.features.enablePin ||
-			this.plugin.settings.features.enableStar ||
-			this.plugin.settings.features.enableFolders
-
-		// Render the smart group bar if any features are enabled
-		if (shouldShowSmartGroupBar) {
-			this.renderSmartGroupBar(container)
 		}
 
 		// Apply smart group filter
@@ -104,74 +143,6 @@ export class WorkspacesView extends ItemView {
 		} else {
 			// Default flat list when folders disabled
 			this.renderFlatWorkspaceList(listContainer, workspaces)
-		}
-	}
-
-	private renderSmartGroupBar(container: HTMLElement) {
-		const bar = container.createDiv('smart-group-bar')
-
-		const groups: Array<{
-			id: SmartGroupType | null
-			label: string
-			icon: string
-		}> = [{ id: null, label: 'All', icon: 'layout-grid' }]
-
-		// Add recent smart group if enabled
-		if (this.plugin.settings.features.enableRecent) {
-			groups.push({ id: 'recent', label: 'Recent', icon: 'clock' })
-		}
-
-		// Add pin smart group if enabled
-		if (this.plugin.settings.features.enablePin) {
-			groups.push({ id: 'pinned', label: 'Pinned', icon: 'pin' })
-		}
-
-		// Add star smart group if enabled
-		if (this.plugin.settings.features.enableStar) {
-			groups.push({
-				id: 'favorites',
-				label: 'Favorites',
-				icon: 'star',
-			})
-		}
-
-		groups.forEach((group) => {
-			const btn = bar.createEl('button', {
-				cls: 'smart-group-button',
-			})
-
-			if (this.plugin.settings.view.activeSmartGroup === group.id) {
-				btn.addClass('is-active')
-			}
-
-			const iconEl = btn.createSpan({ cls: 'smart-group-icon' })
-			setIcon(iconEl, group.icon)
-
-			// Add aria-label for accessibility
-			btn.setAttribute('aria-label', group.label)
-
-			btn.addEventListener('click', () => {
-				this.plugin.settings.view.activeSmartGroup = group.id
-				void this.plugin.saveSettings()
-				this.renderWorkspaces()
-			})
-		})
-
-		// Add folder button
-		if (this.plugin.settings.features.enableFolders) {
-			const addFolderBtn = bar.createEl('button', {
-				cls: 'smart-group-button add-folder-button',
-			})
-			addFolderBtn.setAttribute('aria-label', 'Add folder')
-
-			const iconEl = addFolderBtn.createSpan({ cls: 'smart-group-icon' })
-			setIcon(iconEl, 'folder-plus')
-
-			addFolderBtn.addEventListener('click', (e) => {
-				e.preventDefault()
-				e.stopPropagation()
-				createFolderPrompt(this.plugin)
-			})
 		}
 	}
 
@@ -239,7 +210,8 @@ export class WorkspacesView extends ItemView {
 		setIcon(collapseIcon, isCollapsed ? 'chevron-right' : 'chevron-down')
 
 		if (folder?.icon) {
-			header.createSpan({ text: folder.icon, cls: 'folder-icon' })
+			const iconEl = header.createSpan({ cls: 'folder-icon' })
+			renderIcon(iconEl, folder.icon, '')
 		}
 
 		header.createSpan({ text: folder?.name || 'No Folder', cls: 'folder-name' })
@@ -301,13 +273,6 @@ export class WorkspacesView extends ItemView {
 	private renderWorkspaceItemContent(item: HTMLElement, workspace: WorkspaceConfig) {
 		const content = item.createDiv('workspace-item-content')
 
-		if (this.plugin.settings.features.enableDragAndDrop) {
-			content.createSpan({
-				cls: 'workspace-drag-handle',
-				text: '⋮⋮',
-			})
-		}
-
 		if (this.plugin.settings.features.enablePin && workspace.pinned) {
 			const pinIcon = content.createSpan({ cls: 'workspace-pin-icon' })
 			setIcon(pinIcon, 'pin')
@@ -318,10 +283,8 @@ export class WorkspacesView extends ItemView {
 			setIcon(starIcon, 'star')
 		}
 
-		content.createSpan({
-			text: workspace.icon || '📋',
-			cls: 'workspace-item-icon',
-		})
+		const iconEl = content.createSpan({ cls: 'workspace-item-icon' })
+		renderIcon(iconEl, workspace.icon, '📋')
 
 		content.createSpan({
 			text: workspace.name,
@@ -334,10 +297,7 @@ export class WorkspacesView extends ItemView {
 			templateIcon.setAttribute('aria-label', 'Template')
 		}
 
-		content.addEventListener('click', (e) => {
-			if ((e.target as HTMLElement).classList.contains('workspace-drag-handle')) {
-				return
-			}
+		content.addEventListener('click', () => {
 			void this.plugin.loadWorkspaceAndRefresh(workspace.id)
 		})
 
