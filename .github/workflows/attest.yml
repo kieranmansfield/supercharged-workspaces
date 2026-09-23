@@ -20,7 +20,10 @@ jobs:
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       - run: pnpm run build
-      - run: ls -la main.js
+      - run: ls -la main.js manifest.json styles.css
       - uses: actions/attest@v4.1.0
         with:
-          subject-path: main.js
+          subject-path: |
+            main.js
+            manifest.json
+            styles.css
