@@ -33,7 +33,7 @@ export interface PluginSettings {
 	}
 	features: {
 		autoSave: boolean
-		enableBetaFolders: boolean // Toggle folder functionality (beta)
+		enableFolders: boolean // Toggle folder organization for workspaces
 		enableDragAndDrop: boolean // Toggle drag-and-drop reordering
 		enablePin: boolean // Toggle pin functionality
 		enableStar: boolean // Toggle star functionality
@@ -69,7 +69,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 	},
 	features: {
 		autoSave: false,
-		enableBetaFolders: true,
+		enableFolders: true,
 		enableDragAndDrop: false,
 		enablePin: false,
 		enableStar: false,

@@ -27,9 +27,12 @@ function buildUi(ui: Record<string, unknown>): PluginSettings['ui'] {
 
 function buildFeatures(features: Record<string, unknown>): PluginSettings['features'] {
 	const defaults = DEFAULT_SETTINGS.features
+	// enableBetaFolders was renamed to enableFolders (folders are no longer beta);
+	// fall back to the old key so existing users keep their choice.
+	const legacyEnableFolders = features.enableBetaFolders as boolean | undefined
 	return {
 		autoSave: (features.autoSave as boolean) ?? defaults.autoSave,
-		enableBetaFolders: (features.enableBetaFolders as boolean) ?? defaults.enableBetaFolders,
+		enableFolders: (features.enableFolders as boolean) ?? legacyEnableFolders ?? defaults.enableFolders,
 		enableDragAndDrop: (features.enableDragAndDrop as boolean) ?? defaults.enableDragAndDrop,
 		enablePin: (features.enablePin as boolean) ?? defaults.enablePin,
 		enableStar: (features.enableStar as boolean) ?? defaults.enableStar,
@@ -65,6 +68,7 @@ function liftFlatFormat(flat: Record<string, unknown>): Record<string, unknown> 
 		},
 		features: {
 			autoSave: flat.autoSave,
+			enableFolders: flat.enableFolders,
 			enableBetaFolders: flat.enableBetaFolders,
 			enableDragAndDrop: flat.enableDragAndDrop,
 			enablePin: flat.enablePin,

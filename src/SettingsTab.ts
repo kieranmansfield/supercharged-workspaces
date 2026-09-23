@@ -51,8 +51,8 @@ export class SettingsTab extends PluginSettingTab {
 				return this.plugin.settings.ui.showStatusBar
 			case 'autoSave':
 				return this.plugin.settings.features.autoSave
-			case 'enableBetaFolders':
-				return this.plugin.settings.features.enableBetaFolders
+			case 'enableFolders':
+				return this.plugin.settings.features.enableFolders
 			case 'enableDragAndDrop':
 				return this.plugin.settings.features.enableDragAndDrop
 			case 'enablePin':
@@ -86,8 +86,8 @@ export class SettingsTab extends PluginSettingTab {
 				this.plugin.settings.features.autoSave = value as boolean
 				await this.plugin.saveSettings()
 				return
-			case 'enableBetaFolders':
-				this.plugin.settings.features.enableBetaFolders = value as boolean
+			case 'enableFolders':
+				this.plugin.settings.features.enableFolders = value as boolean
 				await this.plugin.saveSettings()
 				this.plugin.refreshWorkspacesView()
 				return
@@ -198,7 +198,7 @@ export class SettingsTab extends PluginSettingTab {
 			})
 		}
 
-		if (this.plugin.settings.features.enableBetaFolders) {
+		if (this.plugin.settings.features.enableFolders) {
 			items.push({
 				name: 'Folder',
 				control: { type: 'dropdown', key: key('folderId'), options: this.folderOptions() },
@@ -259,9 +259,9 @@ export class SettingsTab extends PluginSettingTab {
 				control: { type: 'toggle', key: 'autoSave' },
 			},
 			{
-				name: 'Enable workspace folders (beta)',
-				desc: 'Enable folder organization for workspaces. This is a beta feature.',
-				control: { type: 'toggle', key: 'enableBetaFolders' },
+				name: 'Workspace folders',
+				desc: 'Organize workspaces into folders',
+				control: { type: 'toggle', key: 'enableFolders' },
 			},
 			{
 				name: 'Enable drag-and-drop reordering',

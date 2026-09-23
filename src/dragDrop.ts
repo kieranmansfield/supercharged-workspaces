@@ -143,9 +143,9 @@ export class DragDropController {
 		}
 	}
 
-	// If beta folders enabled and dropped on a workspace in a different folder, move to that folder
+	// If folders are enabled and dropped on a workspace in a different folder, move to that folder
 	private reassignFolderOnDrop(draggedWorkspace: WorkspaceConfig, targetFolderId: string | undefined) {
-		if (!this.plugin.settings.features.enableBetaFolders) return
+		if (!this.plugin.settings.features.enableFolders) return
 
 		const resolvedTargetFolderId = targetFolderId === 'no-folder' ? undefined : targetFolderId
 		if (this.draggedFromFolder !== resolvedTargetFolderId) {

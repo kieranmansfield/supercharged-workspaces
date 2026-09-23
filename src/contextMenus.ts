@@ -78,8 +78,8 @@ export class WorkspaceContextMenus {
 					})
 			})
 		}
-		// Move to folder submenu (only if beta enabled)
-		if (this.plugin.settings.features.enableBetaFolders) {
+		// Move to folder submenu
+		if (this.plugin.settings.features.enableFolders) {
 			menu.addItem((item) => {
 				item
 					.setTitle('Move to folder')

@@ -170,8 +170,8 @@ export function registerCommands(
 		},
 	})
 
-	// Create new folder (only if beta enabled)
-	if (plugin.settings.features.enableBetaFolders) {
+	// Create new folder (only if folders enabled)
+	if (plugin.settings.features.enableFolders) {
 		plugin.addCommand({
 			id: 'create-folder',
 			name: 'Create workspace folder',

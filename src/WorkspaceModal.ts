@@ -11,7 +11,7 @@ function addFolderDropdown(
 	currentFolderId: string | undefined,
 	onChange: (folderId: string | undefined) => void
 ) {
-	if (!plugin.settings.features.enableBetaFolders) return
+	if (!plugin.settings.features.enableFolders) return
 
 	const folders = Object.values(plugin.settings.folders)
 	if (folders.length === 0) return

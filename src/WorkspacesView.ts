@@ -81,7 +81,7 @@ export class WorkspacesView extends ItemView {
 			this.plugin.settings.features.enableRecent ||
 			this.plugin.settings.features.enablePin ||
 			this.plugin.settings.features.enableStar ||
-			this.plugin.settings.features.enableBetaFolders
+			this.plugin.settings.features.enableFolders
 
 		// Render the smart group bar if any features are enabled
 		if (shouldShowSmartGroupBar) {
@@ -98,8 +98,8 @@ export class WorkspacesView extends ItemView {
 		if (this.plugin.settings.view.activeSmartGroup) {
 			// Smart group view - flat list
 			this.renderFlatWorkspaceList(listContainer, workspaces)
-		} else if (this.plugin.settings.features.enableBetaFolders) {
-			// Folder view - organized by folders (only if beta enabled)
+		} else if (this.plugin.settings.features.enableFolders) {
+			// Folder view - organized by folders
 			this.renderFolderView(listContainer, workspaces)
 		} else {
 			// Default flat list when folders disabled
@@ -157,8 +157,8 @@ export class WorkspacesView extends ItemView {
 			})
 		})
 
-		// Add folder button (only if beta enabled)
-		if (this.plugin.settings.features.enableBetaFolders) {
+		// Add folder button
+		if (this.plugin.settings.features.enableFolders) {
 			const addFolderBtn = bar.createEl('button', {
 				cls: 'smart-group-button add-folder-button',
 			})

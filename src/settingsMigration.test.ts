@@ -18,7 +18,7 @@ describe('migrateSettings', () => {
 			ui: { showStatusBar: false },
 			features: {
 				autoSave: true,
-				enableBetaFolders: true,
+				enableFolders: true,
 				enableDragAndDrop: true,
 				enablePin: true,
 				enableStar: true,
@@ -35,6 +35,15 @@ describe('migrateSettings', () => {
 		expect(result.view.activeWorkspaceId).toBe('a')
 		expect(result.view.activeSmartGroup).toBe('pinned')
 		expect(result.view.collapsedFolders).toEqual(new Set(['f1']))
+	})
+
+	it('carries forward the pre-0.0.15 enableBetaFolders key as enableFolders', () => {
+		const nested = {
+			ui: { showStatusBar: true },
+			features: { enableBetaFolders: false },
+		}
+		const result = migrateSettings(nested)
+		expect(result.features.enableFolders).toBe(false)
 	})
 
 	it('lifts a pre-0.0.9 flat settings object into the nested shape', () => {
@@ -63,7 +72,7 @@ describe('migrateSettings', () => {
 		expect(result.ui).toEqual({ showStatusBar: false })
 		expect(result.features).toEqual({
 			autoSave: true,
-			enableBetaFolders: true,
+			enableFolders: true,
 			enableDragAndDrop: true,
 			enablePin: true,
 			enableStar: true,
