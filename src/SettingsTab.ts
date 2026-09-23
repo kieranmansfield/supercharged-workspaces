@@ -225,6 +225,30 @@ export class SettingsTab extends PluginSettingTab {
 
 		const definitions: SettingDefinitionItem[] = [
 			{
+				type: 'list',
+				heading: 'Workspaces',
+				emptyState: 'No workspaces yet. Use the + button to create one.',
+				items: this.workspaceListItems(this.orderedWorkspaces()),
+				onReorder: (oldIndex, newIndex) => void this.reorderWorkspaces(oldIndex, newIndex),
+				onDelete: (index) => {
+					const workspace = this.orderedWorkspaces()[index]
+					if (!workspace) return
+					void this.plugin.workspaceManager.deleteWorkspace(workspace.id).then(() => {
+						this.update()
+						this.plugin.refreshWorkspacesView()
+					})
+				},
+				addItem: {
+					name: 'New workspace',
+					action: () => {
+						new NewWorkspaceModal(this.app, this.plugin.workspaceManager, this.plugin, () => {
+							this.update()
+							this.plugin.refreshWorkspacesView()
+						}).open()
+					},
+				},
+			},
+			{
 				name: 'Show status bar',
 				desc: 'Display current workspace name in the status bar',
 				control: { type: 'toggle', key: 'showStatusBar' },
@@ -263,30 +287,6 @@ export class SettingsTab extends PluginSettingTab {
 				type: 'group',
 				heading: 'Workspace statistics',
 				items: [{ name: `Total saved workspaces: ${workspaces.length}` }, ...this.oldestWorkspaceItem(workspaces)],
-			},
-			{
-				type: 'list',
-				heading: 'Workspaces',
-				emptyState: 'No workspaces yet. Use the + button to create one.',
-				items: this.workspaceListItems(this.orderedWorkspaces()),
-				onReorder: (oldIndex, newIndex) => void this.reorderWorkspaces(oldIndex, newIndex),
-				onDelete: (index) => {
-					const workspace = this.orderedWorkspaces()[index]
-					if (!workspace) return
-					void this.plugin.workspaceManager.deleteWorkspace(workspace.id).then(() => {
-						this.update()
-						this.plugin.refreshWorkspacesView()
-					})
-				},
-				addItem: {
-					name: 'New workspace',
-					action: () => {
-						new NewWorkspaceModal(this.app, this.plugin.workspaceManager, this.plugin, () => {
-							this.update()
-							this.plugin.refreshWorkspacesView()
-						}).open()
-					},
-				},
 			},
 		]
 
