@@ -69,7 +69,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 	},
 	features: {
 		autoSave: false,
-		enableBetaFolders: false,
+		enableBetaFolders: true,
 		enableDragAndDrop: false,
 		enablePin: false,
 		enableStar: false,

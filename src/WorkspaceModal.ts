@@ -247,7 +247,9 @@ export class NewWorkspaceModal extends Modal {
 			.addDropdown((dropdown) => {
 				dropdown.addOption('', 'Blank')
 				dropdown.addOption(CURRENT_LAYOUT, 'Current layout')
-				templates.forEach((t) => dropdown.addOption(t.id, t.name))
+				templates.forEach((t) => {
+					dropdown.addOption(t.id, t.name)
+				})
 				dropdown.setValue(this.templateId)
 				dropdown.onChange((value) => {
 					this.templateId = value
