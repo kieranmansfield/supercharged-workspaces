@@ -22,7 +22,6 @@ export function migrateSettings(raw: unknown): PluginSettings {
 function buildUi(ui: Record<string, unknown>): PluginSettings['ui'] {
 	return {
 		showStatusBar: (ui.showStatusBar as boolean) ?? DEFAULT_SETTINGS.ui.showStatusBar,
-		showSmartGroups: (ui.showSmartGroups as boolean) ?? DEFAULT_SETTINGS.ui.showSmartGroups,
 	}
 }
 
@@ -63,7 +62,6 @@ function liftFlatFormat(flat: Record<string, unknown>): Record<string, unknown> 
 		folders: flat.folders,
 		ui: {
 			showStatusBar: flat.showStatusBar,
-			showSmartGroups: flat.showSmartGroups,
 		},
 		features: {
 			autoSave: flat.autoSave,

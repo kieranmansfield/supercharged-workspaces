@@ -15,7 +15,7 @@ describe('migrateSettings', () => {
 		const nested = {
 			workspaces: { a: { id: 'a' } },
 			folders: {},
-			ui: { showStatusBar: false, showSmartGroups: false },
+			ui: { showStatusBar: false },
 			features: {
 				autoSave: true,
 				enableBetaFolders: true,
@@ -48,7 +48,6 @@ describe('migrateSettings', () => {
 			workspaceOrder: ['a'],
 			folderOrder: ['f1'],
 			activeSmartGroup: 'favorites',
-			showSmartGroups: false,
 			collapsedFolders: ['f1'],
 			enableBetaFolders: true,
 			enableDragAndDrop: true,
@@ -61,7 +60,7 @@ describe('migrateSettings', () => {
 
 		expect(result.workspaces).toEqual(flat.workspaces)
 		expect(result.folders).toEqual(flat.folders)
-		expect(result.ui).toEqual({ showStatusBar: false, showSmartGroups: false })
+		expect(result.ui).toEqual({ showStatusBar: false })
 		expect(result.features).toEqual({
 			autoSave: true,
 			enableBetaFolders: true,
@@ -82,7 +81,6 @@ describe('migrateSettings', () => {
 		const partial = { showStatusBar: false }
 		const result = migrateSettings(partial)
 		expect(result.ui.showStatusBar).toBe(false)
-		expect(result.ui.showSmartGroups).toBe(DEFAULT_SETTINGS.ui.showSmartGroups)
 		expect(result.features).toEqual(DEFAULT_SETTINGS.features)
 	})
 })

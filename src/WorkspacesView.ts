@@ -110,55 +110,52 @@ export class WorkspacesView extends ItemView {
 	private renderSmartGroupBar(container: HTMLElement) {
 		const bar = container.createDiv('smart-group-bar')
 
-		// Only show filter buttons if enabled
-		if (this.plugin.settings.ui.showSmartGroups) {
-			const groups: Array<{
-				id: SmartGroupType | null
-				label: string
-				icon: string
-			}> = [{ id: null, label: 'All', icon: 'layout-grid' }]
+		const groups: Array<{
+			id: SmartGroupType | null
+			label: string
+			icon: string
+		}> = [{ id: null, label: 'All', icon: 'layout-grid' }]
 
-			// Add recent smart group if enabled
-			if (this.plugin.settings.features.enableRecent) {
-				groups.push({ id: 'recent', label: 'Recent', icon: 'clock' })
-			}
+		// Add recent smart group if enabled
+		if (this.plugin.settings.features.enableRecent) {
+			groups.push({ id: 'recent', label: 'Recent', icon: 'clock' })
+		}
 
-			// Add pin smart group if enabled
-			if (this.plugin.settings.features.enablePin) {
-				groups.push({ id: 'pinned', label: 'Pinned', icon: 'pin' })
-			}
+		// Add pin smart group if enabled
+		if (this.plugin.settings.features.enablePin) {
+			groups.push({ id: 'pinned', label: 'Pinned', icon: 'pin' })
+		}
 
-			// Add star smart group if enabled
-			if (this.plugin.settings.features.enableStar) {
-				groups.push({
-					id: 'favorites',
-					label: 'Favorites',
-					icon: 'star',
-				})
-			}
-
-			groups.forEach((group) => {
-				const btn = bar.createEl('button', {
-					cls: 'smart-group-button',
-				})
-
-				if (this.plugin.settings.view.activeSmartGroup === group.id) {
-					btn.addClass('is-active')
-				}
-
-				const iconEl = btn.createSpan({ cls: 'smart-group-icon' })
-				setIcon(iconEl, group.icon)
-
-				// Add aria-label for accessibility
-				btn.setAttribute('aria-label', group.label)
-
-				btn.addEventListener('click', () => {
-					this.plugin.settings.view.activeSmartGroup = group.id
-					void this.plugin.saveSettings()
-					this.renderWorkspaces()
-				})
+		// Add star smart group if enabled
+		if (this.plugin.settings.features.enableStar) {
+			groups.push({
+				id: 'favorites',
+				label: 'Favorites',
+				icon: 'star',
 			})
 		}
+
+		groups.forEach((group) => {
+			const btn = bar.createEl('button', {
+				cls: 'smart-group-button',
+			})
+
+			if (this.plugin.settings.view.activeSmartGroup === group.id) {
+				btn.addClass('is-active')
+			}
+
+			const iconEl = btn.createSpan({ cls: 'smart-group-icon' })
+			setIcon(iconEl, group.icon)
+
+			// Add aria-label for accessibility
+			btn.setAttribute('aria-label', group.label)
+
+			btn.addEventListener('click', () => {
+				this.plugin.settings.view.activeSmartGroup = group.id
+				void this.plugin.saveSettings()
+				this.renderWorkspaces()
+			})
+		})
 
 		// Add folder button (only if beta enabled)
 		if (this.plugin.settings.features.enableBetaFolders) {

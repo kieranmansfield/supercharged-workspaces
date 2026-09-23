@@ -29,7 +29,6 @@ export interface PluginSettings {
 	folders: Record<string, WorkspaceFolder> // Folder definitions
 	ui: {
 		showStatusBar: boolean
-		showSmartGroups: boolean // Toggle smart groups visibility
 	}
 	features: {
 		autoSave: boolean
@@ -66,7 +65,6 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 	folders: {},
 	ui: {
 		showStatusBar: true,
-		showSmartGroups: true,
 	},
 	features: {
 		autoSave: false,
