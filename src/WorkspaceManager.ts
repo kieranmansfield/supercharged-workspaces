@@ -2,6 +2,8 @@ import { App, Notice } from 'obsidian'
 import { WorkspaceConfig } from './types'
 import { generateUniqueId } from './id'
 
+export const CURRENT_LAYOUT = '__current__'
+
 export class WorkspaceManager {
 	constructor(
 		private app: App,
@@ -10,12 +12,45 @@ export class WorkspaceManager {
 	) {}
 
 	async saveWorkspace(name: string, description?: string, icon?: string): Promise<WorkspaceConfig> {
-		const layout = this.app.workspace.getLayout()
-		const id = this.generateId()
-		const now = Date.now()
+		const workspace = await this.persistWorkspace(
+			name,
+			description,
+			icon,
+			this.app.workspace.getLayout()
+		)
+		new Notice(`Workspace "${name}" saved successfully`)
+		return workspace
+	}
 
+	async createWorkspace(
+		name: string,
+		description?: string,
+		icon?: string,
+		templateId?: string
+	): Promise<WorkspaceConfig> {
+		const layout = this.resolveNewWorkspaceLayout(templateId)
+		const workspace = await this.persistWorkspace(name, description, icon, layout)
+		new Notice(`Workspace "${name}" created`)
+		return workspace
+	}
+
+	private resolveNewWorkspaceLayout(templateId?: string): Record<string, unknown> {
+		if (!templateId) return this.blankLayout()
+		if (templateId === CURRENT_LAYOUT) return this.cloneLayout(this.app.workspace.getLayout())
+
+		const template = this.getWorkspaces()[templateId]
+		return this.cloneLayout(template ? template.layout : this.app.workspace.getLayout())
+	}
+
+	private async persistWorkspace(
+		name: string,
+		description: string | undefined,
+		icon: string | undefined,
+		layout: Record<string, unknown>
+	): Promise<WorkspaceConfig> {
+		const now = Date.now()
 		const workspace: WorkspaceConfig = {
-			id,
+			id: this.generateId(),
 			name,
 			description,
 			icon,
@@ -25,11 +60,37 @@ export class WorkspaceManager {
 		}
 
 		const workspaces = this.getWorkspaces()
-		workspaces[id] = workspace
+		workspaces[workspace.id] = workspace
 		await this.saveSettings()
 
-		new Notice(`Workspace "${name}" saved successfully`)
 		return workspace
+	}
+
+	private cloneLayout(layout: Record<string, unknown>): Record<string, unknown> {
+		return JSON.parse(JSON.stringify(layout)) as Record<string, unknown>
+	}
+
+	private blankLayout(): Record<string, unknown> {
+		const layout = this.cloneLayout(this.app.workspace.getLayout())
+		layout.main = {
+			id: generateUniqueId(),
+			type: 'split',
+			children: [
+				{
+					id: generateUniqueId(),
+					type: 'tabs',
+					children: [
+						{
+							id: generateUniqueId(),
+							type: 'leaf',
+							state: { type: 'empty', state: {} },
+						},
+					],
+				},
+			],
+			direction: 'vertical',
+		}
+		return layout
 	}
 
 	async loadWorkspace(id: string): Promise<void> {

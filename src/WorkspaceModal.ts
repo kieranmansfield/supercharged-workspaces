@@ -1,6 +1,6 @@
 import { App, FuzzySuggestModal, Modal, Notice, Setting } from 'obsidian'
 import { WorkspaceConfig, WorkspaceFolder } from './types'
-import { WorkspaceManager } from './WorkspaceManager'
+import { WorkspaceManager, CURRENT_LAYOUT } from './WorkspaceManager'
 import type SuperchargedWorkspacesPlugin from './main'
 import { filterBySmartGroup } from './workspaceFilters'
 
@@ -217,12 +217,75 @@ export class SaveWorkspaceModal extends Modal {
 	}
 }
 
+export class NewWorkspaceModal extends Modal {
+	name = ''
+	description = ''
+	icon = ''
+	private templateId = ''
+
+	constructor(
+		app: App,
+		private workspaceManager: WorkspaceManager,
+		private plugin: SuperchargedWorkspacesPlugin,
+		private onCreate?: (workspace: WorkspaceConfig) => void
+	) {
+		super(app)
+	}
+
+	onOpen() {
+		const { contentEl } = this
+		contentEl.empty()
+
+		contentEl.createEl('h2', { text: 'New workspace' })
+
+		addWorkspaceFields(contentEl, this)
+
+		const templates = this.workspaceManager.getAllWorkspaces().filter((w) => w.isTemplate)
+		new Setting(contentEl)
+			.setName('Start from')
+			.setDesc('Blank starts with an empty pane; a template clones its layout')
+			.addDropdown((dropdown) => {
+				dropdown.addOption('', 'Blank')
+				dropdown.addOption(CURRENT_LAYOUT, 'Current layout')
+				templates.forEach((t) => dropdown.addOption(t.id, t.name))
+				dropdown.setValue(this.templateId)
+				dropdown.onChange((value) => {
+					this.templateId = value
+				})
+			})
+
+		addSaveCancelButtons(
+			contentEl,
+			() => this.name,
+			() => this.close(),
+			async () => {
+				const workspace = await this.workspaceManager.createWorkspace(
+					this.name.trim(),
+					this.description.trim() || undefined,
+					this.icon.trim() || undefined,
+					this.templateId || undefined
+				)
+				if (this.onCreate) {
+					this.onCreate(workspace)
+				}
+				this.close()
+			}
+		)
+	}
+
+	onClose() {
+		const { contentEl } = this
+		contentEl.empty()
+	}
+}
+
 export class RenameWorkspaceModal extends Modal {
 	name: string
 	description: string
 	icon: string
 	private pinned: boolean
 	private starred: boolean
+	private isTemplate: boolean
 	private folderId: string | undefined
 
 	constructor(
@@ -238,6 +301,7 @@ export class RenameWorkspaceModal extends Modal {
 		this.icon = workspace.icon || ''
 		this.pinned = workspace.pinned || false
 		this.starred = workspace.starred || false
+		this.isTemplate = workspace.isTemplate || false
 		this.folderId = workspace.folderId
 	}
 
@@ -267,6 +331,15 @@ export class RenameWorkspaceModal extends Modal {
 				})
 			)
 
+		new Setting(contentEl)
+			.setName('Use as template')
+			.setDesc('Make this workspace available as a starting point for new workspaces')
+			.addToggle((toggle) =>
+				toggle.setValue(this.isTemplate).onChange((value) => {
+					this.isTemplate = value
+				})
+			)
+
 		addFolderDropdown(contentEl, this.plugin, 'Folder', this.folderId, (folderId) => {
 			this.folderId = folderId
 		})
@@ -282,6 +355,7 @@ export class RenameWorkspaceModal extends Modal {
 					icon: this.icon.trim() || undefined,
 					pinned: this.pinned,
 					starred: this.starred,
+					isTemplate: this.isTemplate,
 					folderId: this.folderId,
 				})
 				this.plugin.refreshWorkspacesView()

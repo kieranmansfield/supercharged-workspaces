@@ -11,6 +11,7 @@ export interface WorkspaceConfig {
 	pinned?: boolean // For pinned smart group
 	starred?: boolean // For favorites smart group
 	lastAccessed?: number // Timestamp for recent smart group
+	isTemplate?: boolean // Marked as a reusable starting point for new workspaces
 }
 
 export interface WorkspaceFolder {

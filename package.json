@@ -1,6 +1,6 @@
 {
 	"name": "supercharged-workspaces",
-	"version": "0.0.13",
+	"version": "0.0.14",
 	"description": "Save, load, and manage workspace layouts with enhanced features for power users.",
 	"main": "main.js",
 	"scripts": {

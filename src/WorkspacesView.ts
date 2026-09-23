@@ -328,6 +328,12 @@ export class WorkspacesView extends ItemView {
 			cls: 'workspace-item-name',
 		})
 
+		if (workspace.isTemplate) {
+			const templateIcon = content.createSpan({ cls: 'workspace-template-icon' })
+			setIcon(templateIcon, 'copy')
+			templateIcon.setAttribute('aria-label', 'Template')
+		}
+
 		content.addEventListener('click', (e) => {
 			if ((e.target as HTMLElement).classList.contains('workspace-drag-handle')) {
 				return

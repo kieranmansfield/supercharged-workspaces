@@ -2,6 +2,7 @@ import { Modal, Notice } from 'obsidian'
 import { WorkspaceManager } from './WorkspaceManager'
 import {
 	SaveWorkspaceModal,
+	NewWorkspaceModal,
 	WorkspaceFuzzySuggestModal,
 	EditWorkspaceFuzzySuggestModal,
 	FilteredWorkspaceFuzzySuggestModal,
@@ -32,6 +33,24 @@ export function registerCommands(
 		id: 'save-workspace',
 		name: 'Save current workspace',
 		callback: openSaveWorkspaceModal,
+	})
+
+	// Create a new workspace (blank or from template)
+	plugin.addCommand({
+		id: 'new-workspace',
+		name: 'New workspace',
+		callback: () => {
+			const modal = new NewWorkspaceModal(
+				plugin.app,
+				workspaceManager,
+				plugin,
+				(workspace: WorkspaceConfig) => {
+					updateStatusBar(workspace.id)
+					plugin.refreshWorkspacesView()
+				}
+			)
+			modal.open()
+		},
 	})
 
 	// Load workspace (with fuzzy search)
