@@ -51,7 +51,9 @@ export class DragDropController {
 		header.addEventListener('dragstart', (e) => this.onFolderDragStart(e, folder.id))
 		header.addEventListener('dragend', (e) => this.onFolderDragEnd(e))
 		header.addEventListener('dragover', (e) => this.onDragOver(e))
-		header.addEventListener('drop', (e) => this.onFolderDrop(e, folder.id))
+		header.addEventListener('drop', (e) => {
+			void this.onFolderHeaderDrop(e, folder.id)
+		})
 		header.addEventListener('dragenter', (e) => this.onDragEnter(e))
 		header.addEventListener('dragleave', (e) => this.onDragLeave(e))
 	}
@@ -177,14 +179,34 @@ export class DragDropController {
 		return true
 	}
 
-	// CC 5, well under the CC-20 threshold; CRAP score is purely a 0%-coverage artifact
-	// (CRAP = CC^2 + CC with no coverage), not real complexity
-	// fallow-ignore-next-line complexity
-	private onFolderDrop(e: DragEvent, targetFolderId: string) {
+	// A folder header accepts two kinds of drop: a workspace item (file it into
+	// this folder) or another folder header (reorder folders).
+	private async onFolderHeaderDrop(e: DragEvent, targetFolderId: string) {
 		e.preventDefault()
 		e.stopPropagation()
 		;(e.currentTarget as HTMLElement).removeClass('drag-over')
 
+		if (this.draggedWorkspaceId) {
+			await this.moveWorkspaceToFolder(this.draggedWorkspaceId, targetFolderId)
+			return
+		}
+
+		this.reorderFoldersOnDrop(targetFolderId)
+	}
+
+	private async moveWorkspaceToFolder(workspaceId: string, targetFolderId: string): Promise<void> {
+		const workspace = this.workspaceManager.getWorkspaceById(workspaceId)
+		if (!workspace || workspace.folderId === targetFolderId) return
+
+		workspace.folderId = targetFolderId
+		await this.plugin.saveSettings()
+		this.onChange()
+	}
+
+	// CC 5, well under the CC-20 threshold; CRAP score is purely a 0%-coverage artifact
+	// (CRAP = CC^2 + CC with no coverage), not real complexity
+	// fallow-ignore-next-line complexity
+	private reorderFoldersOnDrop(targetFolderId: string) {
 		if (!this.draggedFolderId || this.draggedFolderId === targetFolderId) {
 			return
 		}
