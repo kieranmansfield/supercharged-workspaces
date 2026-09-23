@@ -53,18 +53,22 @@ export class WorkspaceManager {
 		}
 	}
 
-	async updateWorkspace(id: string, updates: Partial<WorkspaceConfig>): Promise<void> {
+	async updateWorkspace(
+		id: string,
+		updates: Partial<WorkspaceConfig>,
+		silent = false
+	): Promise<void> {
 		const workspaces = this.getWorkspaces()
 		const workspace = workspaces[id]
 
 		if (!workspace) {
-			new Notice('Workspace not found')
+			if (!silent) new Notice('Workspace not found')
 			return
 		}
 
 		Object.assign(workspace, updates, { updatedAt: Date.now() })
 		await this.saveSettings()
-		new Notice(`Workspace "${workspace.name}" updated`)
+		if (!silent) new Notice(`Workspace "${workspace.name}" updated`)
 	}
 
 	async deleteWorkspace(id: string): Promise<void> {

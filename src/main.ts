@@ -1,4 +1,4 @@
-import { Plugin, Menu } from 'obsidian'
+import { Plugin, Menu, debounce, Debouncer } from 'obsidian'
 import { PluginSettings } from './types'
 import { migrateSettings } from './settingsMigration'
 import { WorkspaceManager } from './WorkspaceManager'
@@ -14,6 +14,7 @@ export default class SuperchargedWorkspacesPlugin extends Plugin {
 	folderManager!: FolderManager
 	statusBarItem: HTMLElement | null = null
 	workspaceCommands: string[] = []
+	private debouncedAutoSave!: Debouncer<[], void>
 
 	async onload() {
 		await this.loadSettings()
@@ -61,11 +62,14 @@ export default class SuperchargedWorkspacesPlugin extends Plugin {
 		// Register individual workspace commands
 		this.registerWorkspaceCommands()
 
-		// Listen for layout changes if auto-save is enabled
+		// Listen for layout changes if auto-save is enabled. layout-change fires on
+		// every pane resize/active-leaf switch, not just meaningful edits, so debounce
+		// it to avoid saving (and writing to disk) on every intermediate event.
+		this.debouncedAutoSave = debounce(() => this.autoSaveWorkspace(), 1000, true)
 		this.registerEvent(
 			this.app.workspace.on('layout-change', () => {
 				if (this.settings.features.autoSave && this.settings.view.activeWorkspaceId) {
-					this.autoSaveWorkspace()
+					this.debouncedAutoSave()
 				}
 			})
 		)
@@ -130,6 +134,15 @@ export default class SuperchargedWorkspacesPlugin extends Plugin {
 	}
 
 	async loadWorkspaceAndRefresh(id: string): Promise<void> {
+		// Flush any pending debounced autosave for the workspace we're leaving
+		// before switching, so edits made just before the switch aren't lost
+		// or misattributed to the workspace being switched into.
+		const previousId = this.settings.view.activeWorkspaceId
+		if (this.settings.features.autoSave && previousId && previousId !== id) {
+			this.debouncedAutoSave.cancel()
+			this.autoSaveWorkspace()
+		}
+
 		// Set active workspace before changing layout: changeLayout() fires
 		// 'layout-change' synchronously, and autosave must attribute that
 		// event to the workspace being switched to, not the one being left.
@@ -149,10 +162,11 @@ export default class SuperchargedWorkspacesPlugin extends Plugin {
 		if (!this.settings.view.activeWorkspaceId) return
 
 		const layout = this.app.workspace.getLayout()
-		void this.workspaceManager.updateWorkspace(this.settings.view.activeWorkspaceId, {
-			layout,
-			updatedAt: Date.now(),
-		})
+		void this.workspaceManager.updateWorkspace(
+			this.settings.view.activeWorkspaceId,
+			{ layout, updatedAt: Date.now() },
+			true
+		)
 		this.refreshWorkspacesView()
 	}
 
