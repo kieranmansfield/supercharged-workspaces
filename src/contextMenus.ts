@@ -34,7 +34,7 @@ export class WorkspaceContextMenus {
 
 		menu.addItem((item) => {
 			item
-				.setTitle('Update workspace')
+				.setTitle('Save workspace')
 				.setIcon('save')
 				.onClick(async () => {
 					const layout = this.app.workspace.getLayout()
@@ -95,7 +95,7 @@ export class WorkspaceContextMenus {
 
 		menu.addItem((item) => {
 			item
-				.setTitle('Rename workspace')
+				.setTitle('Edit workspace')
 				.setIcon('pencil')
 				.onClick(() => {
 					new RenameWorkspaceModal(this.app, this.workspaceManager, this.plugin, workspace, () =>
