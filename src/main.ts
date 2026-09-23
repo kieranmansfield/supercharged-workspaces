@@ -130,8 +130,11 @@ export default class SuperchargedWorkspacesPlugin extends Plugin {
 	}
 
 	async loadWorkspaceAndRefresh(id: string): Promise<void> {
-		await this.workspaceManager.loadWorkspace(id)
+		// Set active workspace before changing layout: changeLayout() fires
+		// 'layout-change' synchronously, and autosave must attribute that
+		// event to the workspace being switched to, not the one being left.
 		this.updateStatusBar(id)
+		await this.workspaceManager.loadWorkspace(id)
 	}
 
 	updateStatusBarVisibility() {

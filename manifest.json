@@ -1,7 +1,7 @@
 {
 	"id": "supercharged-workspaces",
 	"name": "Supercharged Workspaces",
-	"version": "0.0.11",
+	"version": "0.0.12",
 	"minAppVersion": "1.13.0",
 	"description": "Save, load, and manage workspace layouts with enhanced features for power users.",
 	"author": "Kieran Mansfield",
