@@ -96,7 +96,8 @@ export class WorkspacesView extends ItemView {
 		this.toggleHeaderAction('favorites', features.enableStar)
 		this.toggleHeaderAction('addFolder', features.enableFolders)
 
-		const active = this.plugin.settings.view.activeSmartGroup
+		const rawActive = this.plugin.settings.view.activeSmartGroup
+		const active = rawActive === 'all' ? null : rawActive
 		SMART_GROUP_ACTIONS.forEach((group) => {
 			this.headerActions.get(group.id ?? 'all')?.toggleClass('is-active', active === group.id)
 		})
@@ -115,35 +116,42 @@ export class WorkspacesView extends ItemView {
 		const allWorkspaces = this.workspaceManager.getAllWorkspaces()
 
 		if (allWorkspaces.length === 0) {
-			const emptyState = container.createDiv('workspaces-empty-state')
-			emptyState.createEl('p', {
-				text: 'No workspaces yet',
-				cls: 'workspaces-empty-text',
-			})
-			emptyState.createEl('p', {
-				text: 'Use "save current workspace" to create your first workspace',
-				cls: 'workspaces-empty-hint',
-			})
+			this.renderEmptyState(container)
 			return
 		}
 
-		// Apply smart group filter
 		const workspaces = filterBySmartGroup(allWorkspaces, this.plugin.settings.view.activeSmartGroup)
-
-		// Main container
 		const listContainer = container.createDiv('workspaces-list')
 
-		// Render based on active smart group or folder view
-		if (this.plugin.settings.view.activeSmartGroup) {
-			// Smart group view - flat list
-			this.renderFlatWorkspaceList(listContainer, workspaces)
-		} else if (this.plugin.settings.features.enableFolders) {
-			// Folder view - organized by folders
+		if (this.shouldRenderFolderView()) {
 			this.renderFolderView(listContainer, workspaces)
 		} else {
-			// Default flat list when folders disabled
 			this.renderFlatWorkspaceList(listContainer, workspaces)
 		}
+	}
+
+	private renderEmptyState(container: HTMLElement) {
+		const emptyState = container.createDiv('workspaces-empty-state')
+		emptyState.createEl('p', {
+			text: 'No workspaces yet',
+			cls: 'workspaces-empty-text',
+		})
+		emptyState.createEl('p', {
+			text: 'Use "save current workspace" to create your first workspace',
+			cls: 'workspaces-empty-hint',
+		})
+	}
+
+	// Only a real filter (recent/pinned/favorites) forces a flat list; "all"
+	// and no filter both mean "show everything", so they still use folder
+	// view when folders are enabled.
+	private shouldRenderFolderView(): boolean {
+		if (!this.plugin.settings.features.enableFolders) return false
+
+		const activeSmartGroup = this.plugin.settings.view.activeSmartGroup
+		const isFiltered =
+			activeSmartGroup === 'recent' || activeSmartGroup === 'pinned' || activeSmartGroup === 'favorites'
+		return !isFiltered
 	}
 
 	private renderFlatWorkspaceList(container: HTMLElement, workspaces: WorkspaceConfig[]) {
