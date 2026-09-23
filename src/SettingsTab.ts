@@ -1,6 +1,8 @@
-import { App, PluginSettingTab, Setting } from 'obsidian'
+import { App, PluginSettingTab, SettingDefinition, SettingDefinitionItem } from 'obsidian'
 import type SuperchargedWorkspacesPlugin from './main'
 import { WorkspaceConfig } from './types'
+
+const WORKSPACE_KEY_PREFIX = 'workspace:'
 
 export class SettingsTab extends PluginSettingTab {
 	plugin: SuperchargedWorkspacesPlugin
@@ -10,130 +12,158 @@ export class SettingsTab extends PluginSettingTab {
 		this.plugin = plugin
 	}
 
-	display(): void {
-		const { containerEl } = this
-		containerEl.empty()
+	// Called by Obsidian's declarative settings renderer for each control-type
+	// setting definition, not from our own code.
+	// fallow-ignore-next-line unused-class-member, complexity
+	getControlValue(key: string): unknown {
+		if (key.startsWith(WORKSPACE_KEY_PREFIX)) {
+			const workspaceId = key.slice(WORKSPACE_KEY_PREFIX.length)
+			return this.plugin.workspaceManager.getWorkspaceById(workspaceId)?.commandEnabled ?? false
+		}
 
-		new Setting(containerEl)
-			.setName('Show status bar')
-			.setDesc('Display current workspace name in the status bar')
-			.addToggle((toggle) =>
-				toggle.setValue(this.plugin.settings.ui.showStatusBar).onChange(async (value) => {
-					this.plugin.settings.ui.showStatusBar = value
-					await this.plugin.saveSettings()
-					this.plugin.updateStatusBarVisibility()
-				})
-			)
+		switch (key) {
+			case 'showStatusBar':
+				return this.plugin.settings.ui.showStatusBar
+			case 'autoSave':
+				return this.plugin.settings.features.autoSave
+			case 'enableBetaFolders':
+				return this.plugin.settings.features.enableBetaFolders
+			case 'enableDragAndDrop':
+				return this.plugin.settings.features.enableDragAndDrop
+			case 'enablePin':
+				return this.plugin.settings.features.enablePin
+			case 'enableStar':
+				return this.plugin.settings.features.enableStar
+			case 'enableRecent':
+				return this.plugin.settings.features.enableRecent
+			default:
+				return undefined
+		}
+	}
 
-		new Setting(containerEl)
-			.setName('Auto-save current workspace')
-			.setDesc('Automatically save workspace layout changes (experimental)')
-			.addToggle((toggle) =>
-				toggle.setValue(this.plugin.settings.features.autoSave).onChange(async (value) => {
-					this.plugin.settings.features.autoSave = value
-					await this.plugin.saveSettings()
-				})
-			)
+	// Called by Obsidian's declarative settings renderer on user changes to a
+	// control-type setting definition, not from our own code.
+	// fallow-ignore-next-line unused-class-member, complexity
+	async setControlValue(key: string, value: unknown): Promise<void> {
+		if (key.startsWith(WORKSPACE_KEY_PREFIX)) {
+			const workspaceId = key.slice(WORKSPACE_KEY_PREFIX.length)
+			const workspace = this.plugin.workspaceManager.getWorkspaceById(workspaceId)
+			if (workspace) {
+				workspace.commandEnabled = value as boolean
+				await this.plugin.saveSettings()
+				this.plugin.registerWorkspaceCommands()
+			}
+			return
+		}
 
-		new Setting(containerEl)
-			.setName('Enable workspace folders (beta)')
-			.setDesc('Enable folder organization for workspaces. This is a beta feature.')
-			.addToggle((toggle) =>
-				toggle.setValue(this.plugin.settings.features.enableBetaFolders).onChange(async (value) => {
-					this.plugin.settings.features.enableBetaFolders = value
-					await this.plugin.saveSettings()
-					this.plugin.refreshWorkspacesView()
-				})
-			)
+		switch (key) {
+			case 'showStatusBar':
+				this.plugin.settings.ui.showStatusBar = value as boolean
+				await this.plugin.saveSettings()
+				this.plugin.updateStatusBarVisibility()
+				return
+			case 'autoSave':
+				this.plugin.settings.features.autoSave = value as boolean
+				await this.plugin.saveSettings()
+				return
+			case 'enableBetaFolders':
+				this.plugin.settings.features.enableBetaFolders = value as boolean
+				await this.plugin.saveSettings()
+				this.plugin.refreshWorkspacesView()
+				return
+			case 'enableDragAndDrop':
+				this.plugin.settings.features.enableDragAndDrop = value as boolean
+				await this.plugin.saveSettings()
+				this.plugin.refreshWorkspacesView()
+				return
+			case 'enablePin':
+				this.plugin.settings.features.enablePin = value as boolean
+				await this.plugin.saveSettings()
+				this.plugin.refreshWorkspacesView()
+				return
+			case 'enableStar':
+				this.plugin.settings.features.enableStar = value as boolean
+				await this.plugin.saveSettings()
+				this.plugin.refreshWorkspacesView()
+				return
+			case 'enableRecent':
+				this.plugin.settings.features.enableRecent = value as boolean
+				await this.plugin.saveSettings()
+				this.plugin.refreshWorkspacesView()
+				return
+		}
+	}
 
-		new Setting(containerEl)
-			.setName('Enable drag-and-drop reordering')
-			.setDesc('Allow reordering workspaces and folders by dragging them')
-			.addToggle((toggle) =>
-				toggle.setValue(this.plugin.settings.features.enableDragAndDrop).onChange(async (value) => {
-					this.plugin.settings.features.enableDragAndDrop = value
-					await this.plugin.saveSettings()
-					this.plugin.refreshWorkspacesView()
-				})
-			)
-
-		new Setting(containerEl)
-			.setName('Enable pin workspaces')
-			.setDesc('Enable pinning workspaces to keep them at the top')
-			.addToggle((toggle) =>
-				toggle.setValue(this.plugin.settings.features.enablePin).onChange(async (value) => {
-					this.plugin.settings.features.enablePin = value
-					await this.plugin.saveSettings()
-					this.plugin.refreshWorkspacesView()
-				})
-			)
-
-		new Setting(containerEl)
-			.setName('Enable star workspaces')
-			.setDesc('Enable starring workspaces as favorites')
-			.addToggle((toggle) =>
-				toggle.setValue(this.plugin.settings.features.enableStar).onChange(async (value) => {
-					this.plugin.settings.features.enableStar = value
-					await this.plugin.saveSettings()
-					this.plugin.refreshWorkspacesView()
-				})
-			)
-
-		new Setting(containerEl)
-			.setName('Enable recent workspaces')
-			.setDesc('Enable tracking and filtering recently accessed workspaces')
-			.addToggle((toggle) =>
-				toggle.setValue(this.plugin.settings.features.enableRecent).onChange(async (value) => {
-					this.plugin.settings.features.enableRecent = value
-					await this.plugin.saveSettings()
-					this.plugin.refreshWorkspacesView()
-				})
-			)
-
-		// Workspace statistics
-		new Setting(containerEl).setName('Workspace statistics').setHeading()
-
+	// Called by Obsidian on every render of the settings tab, not from our own code.
+	// fallow-ignore-next-line unused-class-member
+	getSettingDefinitions(): SettingDefinitionItem[] {
 		const workspaces = this.plugin.workspaceManager.getAllWorkspaces()
-		const statsDiv = containerEl.createDiv('supercharged-workspaces-stats')
 
-		statsDiv.createEl('p', {
-			text: `Total saved workspaces: ${workspaces.length}`,
-		})
+		const definitions: SettingDefinitionItem[] = [
+			{
+				name: 'Show status bar',
+				desc: 'Display current workspace name in the status bar',
+				control: { type: 'toggle', key: 'showStatusBar' },
+			},
+			{
+				name: 'Auto-save current workspace',
+				desc: 'Automatically save workspace layout changes (experimental)',
+				control: { type: 'toggle', key: 'autoSave' },
+			},
+			{
+				name: 'Enable workspace folders (beta)',
+				desc: 'Enable folder organization for workspaces. This is a beta feature.',
+				control: { type: 'toggle', key: 'enableBetaFolders' },
+			},
+			{
+				name: 'Enable drag-and-drop reordering',
+				desc: 'Allow reordering workspaces and folders by dragging them',
+				control: { type: 'toggle', key: 'enableDragAndDrop' },
+			},
+			{
+				name: 'Enable pin workspaces',
+				desc: 'Enable pinning workspaces to keep them at the top',
+				control: { type: 'toggle', key: 'enablePin' },
+			},
+			{
+				name: 'Enable star workspaces',
+				desc: 'Enable starring workspaces as favorites',
+				control: { type: 'toggle', key: 'enableStar' },
+			},
+			{
+				name: 'Enable recent workspaces',
+				desc: 'Enable tracking and filtering recently accessed workspaces',
+				control: { type: 'toggle', key: 'enableRecent' },
+			},
+			{
+				type: 'group',
+				heading: 'Workspace statistics',
+				items: [{ name: `Total saved workspaces: ${workspaces.length}` }, ...this.oldestWorkspaceItem(workspaces)],
+			},
+			{
+				type: 'group',
+				heading: 'Workspace commands',
+				items:
+					workspaces.length === 0
+						? [{ name: 'No workspaces available. Create a workspace first.' }]
+						: workspaces.map((workspace) => ({
+								name: (workspace.icon ? workspace.icon + ' ' : '') + workspace.name,
+								desc: workspace.description || 'Load this workspace from command palette',
+								control: {
+									type: 'toggle' as const,
+									key: `${WORKSPACE_KEY_PREFIX}${workspace.id}`,
+								},
+							})),
+			},
+		]
 
-		if (workspaces.length > 0) {
-			const oldestDate = new Date(
-				Math.min(...workspaces.map((w: WorkspaceConfig) => w.createdAt))
-			).toLocaleDateString()
-			statsDiv.createEl('p', {
-				text: `Oldest workspace: ${oldestDate}`,
-			})
-		}
+		return definitions
+	}
 
-		// Workspace commands
-		new Setting(containerEl).setName('Workspace commands').setHeading()
-		containerEl.createEl('p', {
-			text: 'Enable command palette commands for quick access to specific workspaces',
-			cls: 'setting-item-description',
-		})
+	private oldestWorkspaceItem(workspaces: WorkspaceConfig[]): SettingDefinition[] {
+		if (workspaces.length === 0) return []
 
-		if (workspaces.length === 0) {
-			containerEl.createEl('p', {
-				text: 'No workspaces available. Create a workspace first.',
-				cls: 'setting-item-description',
-			})
-		} else {
-			workspaces.forEach((workspace: WorkspaceConfig) => {
-				new Setting(containerEl)
-					.setName((workspace.icon ? workspace.icon + ' ' : '') + workspace.name)
-					.setDesc(workspace.description || 'Load this workspace from command palette')
-					.addToggle((toggle) =>
-						toggle.setValue(workspace.commandEnabled || false).onChange(async (value) => {
-							workspace.commandEnabled = value
-							await this.plugin.saveSettings()
-							this.plugin.registerWorkspaceCommands()
-						})
-					)
-			})
-		}
+		const oldestDate = new Date(Math.min(...workspaces.map((w) => w.createdAt))).toLocaleDateString()
+		return [{ name: `Oldest workspace: ${oldestDate}` }]
 	}
 }

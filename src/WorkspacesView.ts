@@ -48,7 +48,7 @@ export class WorkspacesView extends ItemView {
 		return 'layout'
 	}
 
-	// eslint-disable-next-line @typescript-eslint/require-await
+	// eslint-disable-next-line @typescript-eslint/require-await -- overrides Obsidian's async ItemView.onOpen signature; no await needed here
 	async onOpen() {
 		const container = this.containerEl.children[1]
 		container.empty()
@@ -302,10 +302,10 @@ export class WorkspacesView extends ItemView {
 		const content = item.createDiv('workspace-item-content')
 
 		if (this.plugin.settings.features.enableDragAndDrop) {
-			const dragHandle = content.createSpan({
+			content.createSpan({
 				cls: 'workspace-drag-handle',
+				text: '⋮⋮',
 			})
-			dragHandle.innerHTML = '⋮⋮'
 		}
 
 		if (this.plugin.settings.features.enablePin && workspace.pinned) {

@@ -175,9 +175,6 @@ importers:
       '@typescript-eslint/parser':
         specifier: 8.70.1
         version: 8.70.1(eslint@10.11.0)(typescript@6.0.3)
-      builtin-modules:
-        specifier: 5.4.0
-        version: 5.4.0
       esbuild:
         specifier: 0.28.2
         version: 0.28.2
@@ -817,10 +814,6 @@ packages:
   brace-expansion@5.0.6:
     resolution: {integrity: sha512-kLpxurY4Z4r9sgMsyG0Z9uzsBlgiU/EFKhj/h91/8yHu0edo7XuixOIH3VcJ8kkxs6/jPzoI6U9Vj3WqbMQ94g==}
     engines: {node: 18 || 20 || >=22}
-
-  builtin-modules@5.4.0:
-    resolution: {integrity: sha512-JCWSCdun+4Ovd9BhM/Vtlmwb7oD6Wl4YiPRXXwhAuwlPhW1un/MKgXn7GZoFm53ginnoNzus69V8JWx0K393jg==}
-    engines: {node: '>=18.20'}
 
   cacheable@2.5.0:
     resolution: {integrity: sha512-60cyAOytib/OzBw1JNSoSV/boK1AtHryDIjvVBk7XbN4ugfkM3+Sry7fEjNgPMGgOjuaZPAp8ruZ0Cxafwyq9g==}
@@ -2549,8 +2542,6 @@ snapshots:
   brace-expansion@5.0.6:
     dependencies:
       balanced-match: 4.0.4
-
-  builtin-modules@5.4.0: {}
 
   cacheable@2.5.0:
     dependencies:
